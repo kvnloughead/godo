@@ -1,8 +1,7 @@
-{{ define "subject" }}Welcome to godo{{ end }}
+{{ define "subject" }}Welcome to GoDo{{ end }}
 
 {{define "plainBody"}}
-Hi, Thanks for signing up for a godo account. We're excited to have you on
-board! For future reference, your user ID number is {{.User.ID}}. 
+Hi, Thanks for signing up for a GoDo account. Get ready to do things! For future reference, your user ID number is {{.User.ID}}. 
 
 Please send a request to the `PUT /v1/users/activation` endpoint with the following JSON body to activate your account:
 
@@ -11,7 +10,7 @@ Please send a request to the `PUT /v1/users/activation` endpoint with the follow
 Please note that this is a one-time use token and it will expire in 3 days.
 
 Thanks, 
-The godo Team
+The GoDo Team
 {{ end }}
 
 {{ define "htmlBody" }}
@@ -23,7 +22,7 @@ The godo Team
 </head>
 <body>
   <p>Hi,</p>
-  <p>Thanks for signing up for a godo account. We're excited to have you on board!</p>
+  <p>Thanks for signing up for a GoDo account. Get ready to do things!</p>
   <p> We're excited to have you on board! For future reference, your user ID number is {{.User.ID}}.</p>
   <p>Please send a request to the <code>PUT /v1/users/activation</code> endpoint with the following JSON body to activate your account:</p>
   <pre>
@@ -33,7 +32,7 @@ The godo Team
   </pre>
   <p>Please note that this is a one-time use token and it will expire in 3 days.</p>
   <p>Thanks,</p>
-  <p>The godo Team</p>
+  <p>The GoDo Team</p>
 </body>
 </html>
 {{ end }}
