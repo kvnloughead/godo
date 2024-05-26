@@ -19,7 +19,7 @@ import (
 //  1. An activation token is sent to the user in a welcome email received when
 //     they register.
 //  2. To activate their account, the user needs to to send the token in a PUT
-//     request to /v1/users/activated.
+//     request to /v1/users/activation.
 //  3. New tokens an be generated via a POST request to /v1/tokens/activation.
 //
 // Authentication scoped tokens are stateful authentication tokens.

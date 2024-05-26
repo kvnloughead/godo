@@ -3,7 +3,7 @@
 {{define "plainBody"}}
 Hi, 
 
-Please send a request to the `PUT /v1/users/activated` endpoint with the following JSON body to activate your account:
+Please send a request to the `PUT /v1/users/activation` endpoint with the following JSON body to activate your account:
 
 {"token": "{{.Token.Plaintext}}"}
 
@@ -22,7 +22,7 @@ The godo Team
 </head>
 <body>
   <p>Hi,</p>
-  <p>Please send a request to the <code>PUT /v1/users/activated</code> endpoint with the following JSON body to activate your account:</p>
+  <p>Please send a request to the <code>PUT /v1/users/activation</code> endpoint with the following JSON body to activate your account:</p>
   <pre>
     <code>
       {"token": "{{.Token.Plaintext}}"}

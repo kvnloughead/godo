@@ -4,7 +4,7 @@
 Hi, Thanks for signing up for a godo account. We're excited to have you on
 board! For future reference, your user ID number is {{.User.ID}}. 
 
-Please send a request to the `PUT /v1/users/activated` endpoint with the following JSON body to activate your account:
+Please send a request to the `PUT /v1/users/activation` endpoint with the following JSON body to activate your account:
 
 {"token": "{{.Token.Plaintext}}"}
 
@@ -25,7 +25,7 @@ The godo Team
   <p>Hi,</p>
   <p>Thanks for signing up for a godo account. We're excited to have you on board!</p>
   <p> We're excited to have you on board! For future reference, your user ID number is {{.User.ID}}.</p>
-  <p>Please send a request to the <code>PUT /v1/users/activated</code> endpoint with the following JSON body to activate your account:</p>
+  <p>Please send a request to the <code>PUT /v1/users/activation</code> endpoint with the following JSON body to activate your account:</p>
   <pre>
     <code>
       {"token": "{{.Token.Plaintext}}"}

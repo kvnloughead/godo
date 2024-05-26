@@ -34,7 +34,7 @@ import (
 //
 //   - POST   /v1/users         				 Register a new user.
 //
-//   - PUT    /v1/users/activated     	 Activates a user.
+//   - PUT    /v1/users/activation     	 Activates a user.
 //
 //   - POST   /v1/tokens/activation   	 Generate a new activation token.
 //
@@ -66,7 +66,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodDelete, "/v1/movies/:id", app.requirePermission(data.MoviesWrite, app.deleteMovie))
 
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUser)
-	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUser)
+	router.HandlerFunc(http.MethodPut, "/v1/users/activation", app.activateUser)
 
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/activation", app.createActivationToken)
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", app.createAuthenticationToken)
