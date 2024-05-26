@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -140,6 +142,21 @@ func loadDefaultlessStringSetting(target *string, envKey string) {
 	}
 }
 
+// getModulePathAndName retrieves the Go module path and name.
+func getModulePathAndName() (string, string, error) {
+	cmd := exec.Command("go", "list", "-m")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", "", err
+	}
+
+	modulePath := strings.TrimSpace(string(output))
+	moduleParts := strings.Split(modulePath, "/")
+	moduleName := moduleParts[len(moduleParts)-1]
+
+	return modulePath, moduleName, nil
+}
+
 // LoadConfig loads the configuration, returning the resulting Config struct.
 // It first loads environmental variables from the environment, including from
 // a .env file. Then, if any command line flags have been set, these will
@@ -150,6 +167,11 @@ func loadDefaultlessStringSetting(target *string, envKey string) {
 // an environmental variable or flag.
 func LoadConfig() Config {
 	err := godotenv.Load()
+	if err != nil {
+		log.Print("Error loading .env file:", err)
+	}
+
+	modulePath, moduleName, err := getModulePathAndName()
 	if err != nil {
 		log.Print("Error loading .env file:", err)
 	}
@@ -176,7 +198,7 @@ func LoadConfig() Config {
 	flag.IntVar(&cfg.SMTP.Port, "smtp-port", 25, "SMTP server port")
 	flag.StringVar(&cfg.SMTP.Username, "smtp-username", "", "SMTP username")
 	flag.StringVar(&cfg.SMTP.Password, "smtp-password", "", "SMTP password")
-	flag.StringVar(&cfg.SMTP.Sender, "smtp-sender", "", "SMTP sender")
+	flag.StringVar(&cfg.SMTP.Sender, "smtp-sender", fmt.Sprintf("%s <no-reply@%s>", moduleName, modulePath), "SMTP sender")
 
 	flag.Parse()
 
