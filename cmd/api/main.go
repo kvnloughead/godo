@@ -22,42 +22,6 @@ var (
 	version = vcs.Version()
 )
 
-// config is a struct containing configuration settings. These settings are
-// specified as CLI flags when application starts, and have defaults provided
-// in case they are omitted.
-// type config struct {
-// 	port int
-// 	env  string
-// 	db   struct {
-// 		dsn          string
-// 		maxOpenConns int
-// 		maxIdleConns int
-// 		maxIdleTime  time.Duration
-// 	}
-
-// 	// cfg.limiter is a struct containing configuration for our rate limiter.
-// 	limiter struct {
-// 		rps     float64 // Requests per second. Defaults to 2.
-// 		burst   int     // Max request in burst. Defaults to 4.
-// 		enabled bool    // Defaults to true.
-// 	}
-
-// 	// cfg.smtp is a struct containing configuration for our SMTP server.
-// 	smtp struct {
-// 		host     string
-// 		port     int
-// 		username string
-// 		password string
-// 		sender   string
-// 	}
-
-// 	// cfg.cors is a struct containing a string slice of trusted origins.
-// 	// If	the slice is empty, CORS will be enabled for all origins.
-// 	cors struct {
-// 		trustedOrigins []string
-// 	}
-// }
-
 // The application struct is used for dependency injection.
 type application struct {
 	config Config
