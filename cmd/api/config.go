@@ -129,6 +129,17 @@ func loadDurationFromEnvOrFlag(target *time.Duration, defaultVal time.Duration, 
 	}
 }
 
+// loadDefaultlessStringSetting loads a setting that doesn't provide a functioning
+// default value.
+//
+// target should be a pointer to a string that has already been attached to a
+// call to flag.StringVar.
+func loadDefaultlessStringSetting(target *string, envKey string) {
+	if *target == "" {
+		*target = os.Getenv(envKey)
+	}
+}
+
 // LoadConfig loads the configuration, returning the resulting Config struct.
 // It first loads environmental variables from the environment, including from
 // a .env file. Then, if any command line flags have been set, these will
@@ -159,13 +170,22 @@ func LoadConfig() Config {
 	flag.IntVar(&cfg.DB.MaxIdleConns, "db-max-idle-conns", 25, "Postgresql max idle connections")
 	flag.DurationVar(&cfg.DB.MaxIdleTime, "db-max-idle-time", 15*time.Minute, "Postgresql max connection idle time")
 
+	// Read SMTP related settings from CLI flags. The defaults are derived from
+	// the Mailtrap server we are using for testing.
+	flag.StringVar(&cfg.SMTP.Host, "smtp-host", "sandbox.smtp.mailtrap.io", "SMTP host")
+	flag.IntVar(&cfg.SMTP.Port, "smtp-port", 25, "SMTP server port")
+	flag.StringVar(&cfg.SMTP.Username, "smtp-username", "", "SMTP username")
+	flag.StringVar(&cfg.SMTP.Password, "smtp-password", "", "SMTP password")
+	flag.StringVar(&cfg.SMTP.Sender, "smtp-sender", "", "SMTP sender")
+
 	flag.Parse()
 
-	// If DSN is not supplied by flag, load it from the environment. The DSN is
-	// required.
-	if cfg.DB.DSN == "" {
-		cfg.DB.DSN = os.Getenv("DB_DSN")
-	}
+	// Load settings that don't have defaults provided. Suitable values must be
+	// provided as either flags or environmental variables.
+	loadDefaultlessStringSetting(&cfg.DB.DSN, "DB_DSN")
+	loadDefaultlessStringSetting(&cfg.SMTP.Username, "SMTP_USERNAME")
+	loadDefaultlessStringSetting(&cfg.SMTP.Password, "SMTP_PASSWORD")
+	loadDefaultlessStringSetting(&cfg.SMTP.Sender, "SMTP_SENDER")
 
 	// Load integer and duration valued configuration options.
 	loadIntFromEnvOrFlag(&cfg.Port, 4000, "PORT")
