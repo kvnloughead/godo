@@ -1,0 +1,18 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o ./tmp/main ./cmd/web && chmod +x ./tmp/main"
+  bin = "./tmp/main"
+  include_ext = ["go", "tpl", "tmpl", "html", "css", "js"]
+  exclude_dir = ["assets", "tmp"]
+
+[log]
+  time_format = "15:04:05"
+  log_file = "air.log"
+
+[color]
+  main = "yellow"
+  watcher = "cyan"
+  build = "green"
+  runner = "magenta"
