@@ -13,7 +13,7 @@ help:
 	@echo "  Command line flags are supported for run/api and run/air.\n  Specify them like this: "
 	@echo "\n\t  make FLAGS=\"-x -y\" command"
 	@echo "\n  For a list of implemented flags for the ./cmd/api application, \n  run 'make help/web'\n"
-	@echo "\nEnvirontmental Variables:\n"
+	@echo "\nEnvironmental Variables:\n"
 	@echo "  Environmental variables are supported for run/api and run/air.\n  They can be exported to the environment, or stored in a .env file.\n"
 
 ## help/web: prints help from ./cmd/api (including flag descriptions)
@@ -58,3 +58,23 @@ db/migrations/new:
 db/migrations/up: confirm
 	@echo 'Running all up migrations'
 	migrate -path ./migrations -database ${DB_DSN} up
+
+## db/migrations/down: apply all 'down' migrations
+.PHONY: db/migrations/down
+db/migrations/down: confirm
+	@echo 'Running all down migrations'
+	migrate -path ./migrations -database ${DB_DSN} down
+
+## db/migrations/goto version=$1: goto specific migration version
+.PHONY: db/migrations/goto
+db/migrations/goto: confirm
+	@echo 'Migrating to version ${version}'
+	migrate -path ./migrations -database ${DB_DSN} goto ${version}
+
+## db/migrations/clean version=$1: Intended to clean dirty DB.  Specify the dirty version number, and it will be decremented and passed as an argument to force
+.PHONY: db/migrations/clean
+db/migrations/clean: confirm
+	@echo 'Cleaning DB (dirty version ${version})'
+	@decremented_version=$$((${version}-1)); \
+	echo "Using version $${decremented_version}"; \
+	migrate -path ./migrations -database ${DB_DSN} force $${decremented_version}
