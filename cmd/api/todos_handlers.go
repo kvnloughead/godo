@@ -10,12 +10,21 @@ import (
 )
 
 // listTodos handles GET requests to the /v1/todos endpoint.
+//
+// Various options for filtering, sorting, and pagination are available. See
+// TodoModel.GetAll for details.
 func (app *application) listTodos(w http.ResponseWriter, r *http.Request) {
 	// input is an anonymous struct intended to store the query params for
 	// filtering, sorting, and pagination.
 	var input struct {
-		Title  string
-		Genres []string
+		Title    string
+		Contexts []string
+		Projects []string
+
+		// TODO - implement additional query params for filtering.
+		// Priority rune
+		// Completed bool
+		// Metadata  map[string]string
 		data.Filters
 	}
 
@@ -25,11 +34,12 @@ func (app *application) listTodos(w http.ResponseWriter, r *http.Request) {
 	// Read query params into the input struct, setting reasonable defaults if
 	// any are omitted, and validating the values that should be integers.
 	input.Title = app.readQueryString(qs, "title", "")
-	input.Genres = app.readQueryCSV(qs, "genres", []string{})
+	input.Contexts = app.readQueryCSV(qs, "contexts", []string{})
+	input.Projects = app.readQueryCSV(qs, "projects", []string{})
 	input.Filters.Page = app.readQueryInt(qs, "page", 1, v)
 	input.Filters.PageSize = app.readQueryInt(qs, "page_size", 20, v)
 	input.Filters.Sort = app.readQueryString(qs, "sort", "id")
-	input.Filters.SortSafelist = []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"}
+	input.Filters.SortSafelist = []string{"id", "title", "-id", "-title"}
 
 	if !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
@@ -42,9 +52,10 @@ func (app *application) listTodos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todos, metadata, err := app.models.Todos.GetAll(
+	todos, paginationData, err := app.models.Todos.GetAll(
 		input.Title,
-		input.Genres,
+		input.Contexts,
+		input.Projects,
 		input.Filters,
 	)
 
@@ -56,7 +67,7 @@ func (app *application) listTodos(w http.ResponseWriter, r *http.Request) {
 	err = app.writeJSON(
 		w,
 		http.StatusOK,
-		envelope{"todos": todos, "metadata": metadata},
+		envelope{"todos": todos, "paginationData": paginationData},
 		nil,
 	)
 

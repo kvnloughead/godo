@@ -6,8 +6,8 @@ import (
 	validator "github.com/kvnloughead/godo/internal"
 )
 
-// Metadata is a struct that contains pagination data.
-type Metadata struct {
+// PaginationData is a struct that contains pagination data.
+type PaginationData struct {
 	CurrentPage  int `json:"current_page,omitempty"`
 	PageSize     int `json:"page_size,omitempty"`
 	FirstPage    int `json:"first_page,omitempty"`
@@ -15,13 +15,13 @@ type Metadata struct {
 	TotalRecords int `json:"total_records,omitempty"`
 }
 
-func calculateMetadata(totalRecords, page, pageSize int) Metadata {
+func calculatePaginationData(totalRecords, page, pageSize int) PaginationData {
 	if totalRecords == 0 {
-		return Metadata{}
+		return PaginationData{}
 	}
 
 	// LastPage calculation is equivalent to ceil(totalRecords / pageSize).
-	return Metadata{
+	return PaginationData{
 		CurrentPage:  page,
 		PageSize:     pageSize,
 		FirstPage:    1,
@@ -31,9 +31,12 @@ func calculateMetadata(totalRecords, page, pageSize int) Metadata {
 }
 
 type Filters struct {
-	Page         int
-	PageSize     int
-	Sort         string
+	Page     int
+	PageSize int
+	Sort     string
+
+	// SortSafeList is a string slice containing a list of acceptable query
+	// parameters for sorting.
 	SortSafelist []string
 }
 

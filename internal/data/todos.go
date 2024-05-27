@@ -10,15 +10,19 @@ import (
 	"github.com/lib/pq"
 )
 
-// Todo is a struct representing data for a single todo entry.
+// Todo is a struct representing data for a single todo entry. It is intended to
+// be compatible with todo.txt syntax (http://todotxt.org/). How this syntax
+// maps to a Todo document will be covered in cmd/cli.
 type Todo struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"-"`
-	Title     string    `json:"title"`
-	Year      int32     `json:"year,omitempty"`
-	Runtime   Runtime   `json:"runtime,omitempty"`
-	Genres    []string  `json:"genres,omitempty"`
-	Version   int32     `json:"version"`
+	ID        int64             `json:"id"`
+	CreatedAt time.Time         `json:"created_at"`
+	Title     string            `json:"title"`
+	Contexts  []string          `json:"contexts,omitempty"`
+	Projects  []string          `json:"projects,omitempty"`
+	Priority  rune              `json:"priority"`
+	Completed bool              `json:"completed"`
+	Metadata  map[string]string `json:"metadata,omitempty"`
+	Version   int32             `json:"version"`
 }
 
 // TodoModel struct wraps an sql.DB connection pool and implements
@@ -31,7 +35,9 @@ type TodoModel struct {
 // filtered, sorted, and paginated via several optional query parameters.
 //
 //   - title: if provided, fuzzy matches on the todo's title.
-//   - genres: if provided, only todos that have each of the provided genres
+//   - contexts: if provided, only todos that have each of the provided contexts
+//     are included.
+//   - projects: if provided, only todos that have each of the provided projects
 //     are included.
 //   - sort: the key to sort by. Prepend with '-' for descending order. Defaults
 //     to ID, ascending.
@@ -39,28 +45,29 @@ type TodoModel struct {
 //   - page: the page number to return.
 //
 // Pagination metadata is returned in the response, unless no records are found.
-func (m TodoModel) GetAll(title string, genres []string, filters Filters) ([]*Todo, Metadata, error) {
+func (m TodoModel) GetAll(title string, contexts []string, projects []string, filters Filters) ([]*Todo, PaginationData, error) {
 	// We are using fmt.Sprintf to interpolate column names, since it is not
 	// possible to do that with postgresql placeholders.
 	query := fmt.Sprintf(`
 		SELECT 
 			count(*) OVER(),
-			id, created_at, title, year, runtime, genres, version
+			id, created_at, title, contexts, projects, priority, completed, metadata, version
 		FROM todos
 		WHERE (to_tsvector('english', title)
 					 @@ plainto_tsquery('english', $1) OR $1 = '')
-		AND (genres @> $2 OR $2 = '{}')
+		AND (contexts @> $2 OR $2 = '{}')
+		AND (projects @> $3 OR $3 = '{}')
 		ORDER BY %s %s, id ASC
-		LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
+		LIMIT $4 OFFSET $5`, filters.sortColumn(), filters.sortDirection())
 
 	ctx, cancel := CreateTimeoutContext(QueryTimeout)
 	defer cancel()
 
 	// Retrieve matching rows from database.
-	args := []any{title, pq.Array(genres), filters.limit(), filters.offset()}
+	args := []any{title, pq.Array(contexts), pq.Array(projects), filters.limit(), filters.offset()}
 	rows, err := m.DB.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, Metadata{}, err
+		return nil, PaginationData{}, err
 	}
 	defer rows.Close() // Defer closing after handling errors.
 
@@ -77,13 +84,15 @@ func (m TodoModel) GetAll(title string, genres []string, filters Filters) ([]*To
 			&m.ID,
 			&m.CreatedAt,
 			&m.Title,
-			&m.Year,
-			&m.Runtime,
-			pq.Array(&m.Genres),
+			pq.Array(&m.Contexts),
+			pq.Array(&m.Projects),
+			&m.Priority,
+			&m.Completed,
+			&m.Metadata,
 			&m.Version,
 		)
 		if err != nil {
-			return nil, Metadata{}, err
+			return nil, PaginationData{}, err
 		}
 		todos = append(todos, &m)
 	}
@@ -91,11 +100,11 @@ func (m TodoModel) GetAll(title string, genres []string, filters Filters) ([]*To
 	// rows.Err() will contain any errors that occurred during iteration.
 	err = rows.Err()
 	if err != nil {
-		return nil, Metadata{}, err
+		return nil, PaginationData{}, err
 	}
 
-	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
-	return todos, metadata, nil
+	paginationData := calculatePaginationData(totalRecords, filters.Page, filters.PageSize)
+	return todos, paginationData, nil
 }
 
 // Insert adds a new record to the todo table. It accepts a pointer to a
