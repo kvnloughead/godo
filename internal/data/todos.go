@@ -15,6 +15,7 @@ import (
 // maps to a Todo document will be covered in cmd/cli.
 type Todo struct {
 	ID        int64             `json:"id"`
+	UserID    int64             `json:"user_id"`
 	CreatedAt time.Time         `json:"created_at"`
 	Title     string            `json:"title"`
 	Contexts  []string          `json:"contexts,omitempty"`
@@ -45,7 +46,7 @@ type TodoModel struct {
 //   - page: the page number to return.
 //
 // Pagination metadata is returned in the response, unless no records are found.
-func (m TodoModel) GetAll(title string, contexts []string, projects []string, filters Filters) ([]*Todo, PaginationData, error) {
+func (m TodoModel) GetAll(title string, userID int64, contexts []string, projects []string, filters Filters) ([]*Todo, PaginationData, error) {
 	// We are using fmt.Sprintf to interpolate column names, since it is not
 	// possible to do that with postgresql placeholders.
 	query := fmt.Sprintf(`
@@ -57,14 +58,15 @@ func (m TodoModel) GetAll(title string, contexts []string, projects []string, fi
 					 @@ plainto_tsquery('english', $1) OR $1 = '')
 		AND (contexts @> $2 OR $2 = '{}')
 		AND (projects @> $3 OR $3 = '{}')
+		AND user_id = $4
 		ORDER BY %s %s, id ASC
-		LIMIT $4 OFFSET $5`, filters.sortColumn(), filters.sortDirection())
+		LIMIT $5 OFFSET $6`, filters.sortColumn(), filters.sortDirection())
 
 	ctx, cancel := CreateTimeoutContext(QueryTimeout)
 	defer cancel()
 
 	// Retrieve matching rows from database.
-	args := []any{title, pq.Array(contexts), pq.Array(projects), filters.limit(), filters.offset()}
+	args := []any{title, pq.Array(contexts), pq.Array(projects), userID, filters.limit(), filters.offset()}
 	rows, err := m.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, PaginationData{}, err

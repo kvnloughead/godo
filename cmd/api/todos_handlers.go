@@ -54,6 +54,7 @@ func (app *application) listTodos(w http.ResponseWriter, r *http.Request) {
 
 	todos, paginationData, err := app.models.Todos.GetAll(
 		input.Title,
+		app.contextGetUser(r).ID,
 		input.Contexts,
 		input.Projects,
 		input.Filters,
