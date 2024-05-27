@@ -85,13 +85,15 @@ func (app *application) listTodos(w http.ResponseWriter, r *http.Request) {
 // Request bodies are validated by ValidateTodo. A failedValidationResponse
 // error is sent if one or more fields fails validation.
 func (app *application) createTodo(w http.ResponseWriter, r *http.Request) {
-	// Struct to store the data from the responses body. The struct's fields must
+	// Struct to store the data from the response's body. The struct's fields must
 	// be exported to use it with json.NewDecoder.
 	var input struct {
-		Title   string       `json:"title"`
-		Year    int32        `json:"year"`
-		Runtime data.Runtime `json:"runtime"`
-		Genres  []string     `json:"genres"`
+		Title     string   `json:"title"`
+		Contexts  []string `json:"contexts"`
+		Projects  []string `json:"projects"`
+		Priority  rune     `json:"priority"`
+		Completed bool     `json:"completed"`
+		// Metadata  map[string]string `json:"metadata"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -101,10 +103,13 @@ func (app *application) createTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	todo := &data.Todo{
-		Title:   input.Title,
-		Year:    input.Year,
-		Runtime: input.Runtime,
-		Genres:  input.Genres,
+		Title:     input.Title,
+		UserID:    app.contextGetUser(r).ID,
+		Contexts:  input.Contexts,
+		Projects:  input.Projects,
+		Priority:  input.Priority,
+		Completed: input.Completed,
+		// Metadata:  input.Metadata,
 	}
 
 	v := validator.New()

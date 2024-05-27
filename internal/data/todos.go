@@ -26,6 +26,18 @@ type Todo struct {
 	Version   int32             `json:"version"`
 }
 
+// NilToSlices converts the calling structs Contexts and Projects fields to
+// empty slices if they are nil. This allows them to be inserted into
+// non-nullable Postrgresql fields.
+func (t *Todo) NilToSlices() {
+	if t.Contexts == nil {
+		t.Contexts = []string{}
+	}
+	if t.Projects == nil {
+		t.Projects = []string{}
+	}
+}
+
 // TodoModel struct wraps an sql.DB connection pool and implements
 // basic CRUD operations.
 type TodoModel struct {
@@ -116,14 +128,16 @@ func (m TodoModel) Insert(todo *Todo) error {
 	// The query returns the system-generated id, created_at, and version fields
 	// so that we can assign them to the todo struct argument.
 	query := `
-		INSERT INTO todos (title, year, runtime, genres)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO todos (title, user_id, contexts, projects, priority, completed)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id, created_at, version`
 
+	todo.NilToSlices()
+
 	// The args slice contains the fields provided in the todo struct arguement.
-	// Note that we are converting the string slice todo.Genres to an array the
-	// is compatible with the genres field's text[] type.
-	args := []any{todo.Title, todo.Year, todo.Runtime, pq.Array(todo.Genres)}
+	// Note that we are converting the string slice todo.Contexts to an array the
+	// is compatible with the contexts field's text[] type.
+	args := []any{todo.Title, todo.UserID, pq.Array(todo.Contexts), pq.Array(todo.Projects), todo.Priority, todo.Completed}
 
 	ctx, cancel := CreateTimeoutContext(QueryTimeout)
 	defer cancel()
@@ -246,25 +260,28 @@ func (m TodoModel) Delete(id int64) error {
 // ValidateTodo validates the fields of a Todo struct. The fields must meet
 // the following requirements:
 //
-//   - Title, Year, Runtime, and Genres are required.
+//   - Title is the only required field. It contains the full text of the todo.
+//
 //   - Title must be less than 500 bytes.
-//   - Year must be between 1888 and the present.
-//   - Runtime must be a positive integer.
-//   - There must be between 1 and 5 unique genres.
+//
+//   - There can be between 0 and 5 unique, string-valued contexts.
+//
+//   - There can be between 0 and 5 unique, string-valued projects.
+//
+//   - There can be a priority, a single character between A and Z, or a 0. A
+//     priority of 0 indicates that no priority was specified.
+//
+//     TODO - validate metadata
 func ValidateTodo(v *validator.Validator, m *Todo) {
 
 	v.Check(m.Title != "", "title", "must be provided")
 	v.Check(len(m.Title) < 500, "title", "must be less than 500 bytes")
 
-	v.Check(m.Year != 0, "year", "must be provided")
-	v.Check(m.Year >= 1888, "year", "must be after 1888")
-	v.Check(m.Year <= int32(time.Now().Year()), "year", "must not be in the future")
+	v.Check(len(m.Contexts) <= 5, "contexts", "must be no more than 5 contexts")
+	v.Check(validator.Unique(m.Contexts), "contexts", "must not contain duplicate values")
 
-	v.Check(m.Runtime != 0, "runtime", "must be provided")
-	v.Check(m.Runtime > 0, "runtime", "must be a positive integer")
+	v.Check(len(m.Projects) <= 5, "contexts", "must be no more than 5 projects")
+	v.Check(validator.Unique(m.Projects), "projects", "must not contain duplicate values")
 
-	v.Check(m.Genres != nil, "genres", "must be provided")
-	v.Check(len(m.Genres) >= 1, "genres", "must be at least 1 genre")
-	v.Check(len(m.Genres) <= 5, "genres", "must be no more than 5 genres")
-	v.Check(validator.Unique(m.Genres), "genres", "must not contain duplicate values")
+	v.Check(m.Priority == 0 || (m.Priority >= 'A' && m.Priority <= 'Z'), "priority", "must be a capital letter (A to Z)")
 }
