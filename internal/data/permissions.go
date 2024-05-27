@@ -6,12 +6,12 @@ import (
 	"github.com/lib/pq"
 )
 
-// String type for permission codes. Current options are "movies:read" and
-// "movies:write"
+// String type for permission codes. Current options are "todos:read" and
+// "todos:write"
 type PermissionCode string
 
-var MoviesRead = PermissionCode("movies:read")
-var MoviesWrite = PermissionCode("movies:write")
+var TodosRead = PermissionCode("todos:read")
+var TodosWrite = PermissionCode("todos:write")
 
 // Permissions is a string slice for storing permission codes.
 type Permissions []PermissionCode

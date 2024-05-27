@@ -18,7 +18,7 @@ var (
 
 // Models is a struct that wraps all of our models.
 type Models struct {
-	Movies      MovieModel
+	Todos       TodoModel
 	Users       UserModel
 	Tokens      TokenModel
 	Permissions PermissionModel
@@ -27,7 +27,7 @@ type Models struct {
 // NewModels returns an empty instance of our Model struct.
 func NewModels(db *sql.DB) Models {
 	return Models{
-		Movies:      MovieModel{DB: db},
+		Todos:       TodoModel{DB: db},
 		Users:       UserModel{DB: db},
 		Tokens:      TokenModel{DB: db},
 		Permissions: PermissionModel{DB: db},

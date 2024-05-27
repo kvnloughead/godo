@@ -17,20 +17,20 @@ import (
 //
 //   - GET    /v1/healthcheck   				 Show application information.
 //
-//   - GET    /v1/movies								 Show details of a subset of movies.
-//     [permissions - movies:read]
+//   - GET    /v1/todos								 Show details of a subset of todos.
+//     [permissions - todos:read]
 //
-//   - POST   /v1/movies								 Create a new movie.
-//     [permissions - movies:write]
+//   - POST   /v1/todos								 Create a new todo.
+//     [permissions - todos:write]
 //
-//   - GET    /v1/movies/:id	  				 Show details of a specific movie.
-//     [permissions - movies:read]
+//   - GET    /v1/todos/:id	  				 Show details of a specific todo.
+//     [permissions - todos:read]
 //
-//   - PATCH  /v1/movies/:id						 Update details of a specific movie.
-//     [permissions - movies:read]
+//   - PATCH  /v1/todos/:id						 Update details of a specific todo.
+//     [permissions - todos:read]
 //
-//   - DELETE /v1/movies/:id	  				 Delete a specific movie.
-//     [permissions - movies:read]
+//   - DELETE /v1/todos/:id	  				 Delete a specific todo.
+//     [permissions - todos:read]
 //
 //   - POST   /v1/users         				 Register a new user.
 //
@@ -58,12 +58,12 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheck)
 
-	// The /movies endpoints require either movies:read or movies:write permission
-	router.HandlerFunc(http.MethodGet, "/v1/movies", app.requirePermission(data.MoviesRead, app.listMovies))
-	router.HandlerFunc(http.MethodPost, "/v1/movies", app.requirePermission(data.MoviesWrite, app.createMovie))
-	router.HandlerFunc(http.MethodGet, "/v1/movies/:id", app.requirePermission(data.MoviesRead, app.showMovie))
-	router.HandlerFunc(http.MethodPatch, "/v1/movies/:id", app.requirePermission(data.MoviesWrite, app.updateMovie))
-	router.HandlerFunc(http.MethodDelete, "/v1/movies/:id", app.requirePermission(data.MoviesWrite, app.deleteMovie))
+	// The /v1/todos endpoints require either todos:read or todos:write permission
+	router.HandlerFunc(http.MethodGet, "/v1/todos", app.requirePermission(data.TodosRead, app.listTodos))
+	router.HandlerFunc(http.MethodPost, "/v1/todos", app.requirePermission(data.TodosWrite, app.createTodo))
+	router.HandlerFunc(http.MethodGet, "/v1/todos/:id", app.requirePermission(data.TodosRead, app.showTodo))
+	router.HandlerFunc(http.MethodPatch, "/v1/todos/:id", app.requirePermission(data.TodosWrite, app.updateTodo))
+	router.HandlerFunc(http.MethodDelete, "/v1/todos/:id", app.requirePermission(data.TodosWrite, app.deleteTodo))
 
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUser)
 	router.HandlerFunc(http.MethodPut, "/v1/users/activation", app.activateUser)

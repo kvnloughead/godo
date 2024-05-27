@@ -173,7 +173,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 // response is sent.
 //
 // This middleware accepts and returns an http.HandlerFunc, as opposed to
-// http.Handler, which allows us to wrap our individual /v1/movie** routes
+// http.Handler, which allows us to wrap our individual /v1/todo** routes
 // with it.
 func (app *application) requireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -200,7 +200,7 @@ func (app *application) requireAuthenticatedUser(next http.HandlerFunc) http.Han
 // If the user is authenticated, but not activated, a 403 response is sent.
 //
 // This middleware accepts and returns an http.HandlerFunc, as opposed to
-// http.Handler, which allows us to wrap our individual /v1/movie** routes
+// http.Handler, which allows us to wrap our individual /v1/todo** routes
 // with it.
 func (app *application) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
 	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -226,7 +226,7 @@ func (app *application) requireActivatedUser(next http.HandlerFunc) http.Handler
 // the correct permissions, a 403 response is sent.
 //
 // This middleware accepts and returns an http.HandlerFunc, as opposed to
-// http.Handler, which allows us to wrap our individual /v1/movie** routes
+// http.Handler, which allows us to wrap our individual /v1/todo** routes
 // with it.
 func (app *application) requirePermission(permission data.PermissionCode, next http.HandlerFunc) http.HandlerFunc {
 	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

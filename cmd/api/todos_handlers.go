@@ -9,8 +9,8 @@ import (
 	"github.com/kvnloughead/godo/internal/data"
 )
 
-// listMovies handles GET requests to the /v1/movies endpoint.
-func (app *application) listMovies(w http.ResponseWriter, r *http.Request) {
+// listTodos handles GET requests to the /v1/todos endpoint.
+func (app *application) listTodos(w http.ResponseWriter, r *http.Request) {
 	// input is an anonymous struct intended to store the query params for
 	// filtering, sorting, and pagination.
 	var input struct {
@@ -42,7 +42,7 @@ func (app *application) listMovies(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	movies, metadata, err := app.models.Movies.GetAll(
+	todos, metadata, err := app.models.Todos.GetAll(
 		input.Title,
 		input.Genres,
 		input.Filters,
@@ -56,7 +56,7 @@ func (app *application) listMovies(w http.ResponseWriter, r *http.Request) {
 	err = app.writeJSON(
 		w,
 		http.StatusOK,
-		envelope{"movies": movies, "metadata": metadata},
+		envelope{"todos": todos, "metadata": metadata},
 		nil,
 	)
 
@@ -66,13 +66,13 @@ func (app *application) listMovies(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// createMovie handles POST requests to the /v1/movies endpoint. The request
+// createTodo handles POST requests to the /v1/todos endpoint. The request
 // body is decoded by the app.readJSON helper. See that function for details
 // about error handling.
 //
-// Request bodies are validated by ValidateMovie. A failedValidationResponse
+// Request bodies are validated by ValidateTodo. A failedValidationResponse
 // error is sent if one or more fields fails validation.
-func (app *application) createMovie(w http.ResponseWriter, r *http.Request) {
+func (app *application) createTodo(w http.ResponseWriter, r *http.Request) {
 	// Struct to store the data from the responses body. The struct's fields must
 	// be exported to use it with json.NewDecoder.
 	var input struct {
@@ -88,7 +88,7 @@ func (app *application) createMovie(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	movie := &data.Movie{
+	todo := &data.Todo{
 		Title:   input.Title,
 		Year:    input.Year,
 		Runtime: input.Runtime,
@@ -96,14 +96,14 @@ func (app *application) createMovie(w http.ResponseWriter, r *http.Request) {
 	}
 
 	v := validator.New()
-	data.ValidateMovie(v, movie)
+	data.ValidateTodo(v, todo)
 
 	if !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	err = app.models.Movies.Insert(movie)
+	err = app.models.Todos.Insert(todo)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -111,24 +111,24 @@ func (app *application) createMovie(w http.ResponseWriter, r *http.Request) {
 
 	// Specify the API location of the created resource.
 	headers := make(http.Header)
-	headers.Set("Location", fmt.Sprintf("/v1/movies/%d", movie.ID))
+	headers.Set("Location", fmt.Sprintf("/v1/todos/%d", todo.ID))
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"movie": movie}, headers)
+	err = app.writeJSON(w, http.StatusCreated, envelope{"todo": todo}, headers)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 }
 
-// showMovie handles GET requests to the /v1/movies/:id endpoint.
-func (app *application) showMovie(w http.ResponseWriter, r *http.Request) {
+// showTodo handles GET requests to the /v1/todos/:id endpoint.
+func (app *application) showTodo(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIdParam(r)
 	if err != nil {
 		app.notFoundResponse(w, r)
 		return
 	}
 
-	movie, err := app.models.Movies.Get(id)
+	todo, err := app.models.Todos.Get(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -139,28 +139,28 @@ func (app *application) showMovie(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"movie": movie}, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"todo": todo}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 }
 
-// updateMovie handles PATCH requests to the /v1/movies/:id endpoint. It's body
-// should contain one or more movie fields to be modified. Partial updates are
+// updateTodo handles PATCH requests to the /v1/todos/:id endpoint. It's body
+// should contain one or more todo fields to be modified. Partial updates are
 // supported.
 //
 // If fields are omitted in the request body, or if they are given a null value
 // they will be unchanged.
-func (app *application) updateMovie(w http.ResponseWriter, r *http.Request) {
+func (app *application) updateTodo(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIdParam(r)
 	if err != nil {
 		app.notFoundResponse(w, r)
 		return
 	}
 
-	// Fetch existing movie record from DB, returning a 404 if nothing is found.
-	movie, err := app.models.Movies.Get(id)
+	// Fetch existing todo record from DB, returning a 404 if nothing is found.
+	todo, err := app.models.Todos.Get(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -190,28 +190,28 @@ func (app *application) updateMovie(w http.ResponseWriter, r *http.Request) {
 
 	// If the input field isn't nil, update the corresponding field in the record.
 	if input.Title != nil {
-		movie.Title = *input.Title
+		todo.Title = *input.Title
 	}
 	if input.Year != nil {
-		movie.Year = *input.Year
+		todo.Year = *input.Year
 	}
 	if input.Runtime != nil {
-		movie.Runtime = *input.Runtime
+		todo.Runtime = *input.Runtime
 	}
 	if input.Genres != nil {
-		movie.Genres = input.Genres
+		todo.Genres = input.Genres
 	}
 
-	// Validate the updated movie record, or return a 422 response.
+	// Validate the updated todo record, or return a 422 response.
 	v := validator.New()
-	data.ValidateMovie(v, movie)
+	data.ValidateTodo(v, todo)
 	if !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	// Pass updated movie record to Movies.Update().
-	err = app.models.Movies.Update(movie)
+	// Pass updated todo record to Todos.Update().
+	err = app.models.Todos.Update(todo)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrEditConflict):
@@ -223,19 +223,19 @@ func (app *application) updateMovie(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Write updated JSON to response.
-	err = app.writeJSON(w, http.StatusOK, envelope{"movie": movie}, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"todo": todo}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 }
 
-// deleteMovie handles requests to DELETE /v1/movies/:id. If it finds a
+// deleteTodo handles requests to DELETE /v1/todos/:id. If it finds a
 // document with the supplied ID it removes it from the database and sends a
-// JSON response: { "message": "movie successfully deleted" }
+// JSON response: { "message": "todo successfully deleted" }
 //
 // If the document is not found, a 404 response is sent.
-func (app *application) deleteMovie(w http.ResponseWriter, r *http.Request) {
+func (app *application) deleteTodo(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIdParam(r)
 	if err != nil {
 		app.notFoundResponse(w, r)
@@ -243,7 +243,7 @@ func (app *application) deleteMovie(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete record or send an error response.
-	err = app.models.Movies.Delete(id)
+	err = app.models.Todos.Delete(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -254,7 +254,7 @@ func (app *application) deleteMovie(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "movie successfuly deleted"}, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "todo successfuly deleted"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

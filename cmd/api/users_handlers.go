@@ -80,8 +80,8 @@ func (app *application) registerUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Grant user the "movies:read" permission.
-	err = app.models.Permissions.AddForUser(user.ID, data.MoviesRead)
+	// Grant user the "todos:read" permission.
+	err = app.models.Permissions.AddForUser(user.ID, data.TodosRead)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -167,8 +167,8 @@ func (app *application) activateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Grant activated user "movies:write" permission.
-	err = app.models.Permissions.AddForUser(user.ID, data.MoviesWrite)
+	// Grant activated user "todos:write" permission.
+	err = app.models.Permissions.AddForUser(user.ID, data.TodosWrite)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
