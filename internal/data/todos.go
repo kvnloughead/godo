@@ -14,16 +14,15 @@ import (
 // be compatible with todo.txt syntax (http://todotxt.org/). How this syntax
 // maps to a Todo document will be covered in cmd/cli.
 type Todo struct {
-	ID        int64             `json:"id"`
-	UserID    int64             `json:"user_id"`
-	CreatedAt time.Time         `json:"created_at"`
-	Title     string            `json:"title"`
-	Contexts  []string          `json:"contexts,omitempty"`
-	Projects  []string          `json:"projects,omitempty"`
-	Priority  rune              `json:"priority"`
-	Completed bool              `json:"completed"`
-	Metadata  map[string]string `json:"metadata,omitempty"`
-	Version   int32             `json:"version"`
+	ID        int64     `json:"id"`
+	UserID    int64     `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	Title     string    `json:"title"`
+	Contexts  []string  `json:"contexts,omitempty"`
+	Projects  []string  `json:"projects,omitempty"`
+	Priority  rune      `json:"priority"`
+	Completed bool      `json:"completed"`
+	Version   int32     `json:"version"`
 }
 
 // NilToSlices converts the calling structs Contexts and Projects fields to
@@ -64,7 +63,7 @@ func (m TodoModel) GetAll(title string, userID int64, contexts []string, project
 	query := fmt.Sprintf(`
 		SELECT 
 			count(*) OVER(),
-			id, created_at, title, contexts, projects, priority, completed, metadata, version
+			id, created_at, title, contexts, projects, priority, completed, version
 		FROM todos
 		WHERE (to_tsvector('english', title)
 					 @@ plainto_tsquery('english', $1) OR $1 = '')
@@ -102,7 +101,6 @@ func (m TodoModel) GetAll(title string, userID int64, contexts []string, project
 			pq.Array(&m.Projects),
 			&m.Priority,
 			&m.Completed,
-			&m.Metadata,
 			&m.Version,
 		)
 		if err != nil {
@@ -270,8 +268,6 @@ func (m TodoModel) Delete(id int64) error {
 //
 //   - There can be a priority, a single character between A and Z, or a 0. A
 //     priority of 0 indicates that no priority was specified.
-//
-//     TODO - validate metadata
 func ValidateTodo(v *validator.Validator, m *Todo) {
 
 	v.Check(m.Title != "", "title", "must be provided")

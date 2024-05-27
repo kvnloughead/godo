@@ -9,6 +9,5 @@ CREATE TABLE IF NOT EXISTS todos (
   projects text[] NOT NULL,
   priority priority_level NOT NULL,
   completed BOOLEAN NOT NULL,
-  metadata jsonb,
   version integer NOT NULL DEFAULT 1
 );

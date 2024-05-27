@@ -24,7 +24,6 @@ func (app *application) listTodos(w http.ResponseWriter, r *http.Request) {
 		// TODO - implement additional query params for filtering.
 		// Priority rune
 		// Completed bool
-		// Metadata  map[string]string
 		data.Filters
 	}
 
@@ -93,7 +92,6 @@ func (app *application) createTodo(w http.ResponseWriter, r *http.Request) {
 		Projects  []string `json:"projects"`
 		Priority  rune     `json:"priority"`
 		Completed bool     `json:"completed"`
-		// Metadata  map[string]string `json:"metadata"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -109,7 +107,6 @@ func (app *application) createTodo(w http.ResponseWriter, r *http.Request) {
 		Projects:  input.Projects,
 		Priority:  input.Priority,
 		Completed: input.Completed,
-		// Metadata:  input.Metadata,
 	}
 
 	v := validator.New()
