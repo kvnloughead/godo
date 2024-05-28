@@ -154,7 +154,7 @@ func (m TodoModel) Get(id int64) (*Todo, error) {
 	}
 
 	query := `
-		SELECT id, created_at, title, year, runtime, genres, version
+		SELECT id, created_at, title, contexts, projects, priority, completed, version
 		FROM todos WHERE ID = $1`
 
 	var todo Todo
@@ -166,9 +166,10 @@ func (m TodoModel) Get(id int64) (*Todo, error) {
 		&todo.ID,
 		&todo.CreatedAt,
 		&todo.Title,
-		&todo.Year,
-		&todo.Runtime,
-		pq.Array(&todo.Genres),
+		pq.Array(&todo.Contexts),
+		pq.Array(&todo.Projects),
+		&todo.Priority,
+		&todo.Completed,
 		&todo.Version,
 	)
 
@@ -194,15 +195,16 @@ func (m TodoModel) Get(id int64) (*Todo, error) {
 func (m TodoModel) Update(todo *Todo) error {
 	query := `
 		UPDATE todos
-		SET title = $1, year = $2, runtime = $3, genres = $4, version = version + 1
-		WHERE id = $5 AND version = $6
+		SET title = $1, contexts = $2, projects = $3, priority = $4, completed = $5, version = version + 1
+		WHERE id = $6 AND version = $7
 		RETURNING version`
 
 	args := []any{
 		todo.Title,
-		todo.Year,
-		todo.Runtime,
-		pq.Array(todo.Genres),
+		pq.Array(todo.Contexts),
+		pq.Array(todo.Projects),
+		todo.Priority,
+		todo.Completed,
 		todo.ID,
 		todo.Version,
 	}

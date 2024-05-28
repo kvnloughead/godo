@@ -189,10 +189,10 @@ func (app *application) updateTodo(w http.ResponseWriter, r *http.Request) {
 	// pointers to facilitate partial updates. If a value is not provided, the
 	// pointer will be nil, and we can leave the corresponding field unchanged.
 	var input struct {
-		Title   *string       `json:"title"`
-		Year    *int32        `json:"year"`
-		Runtime *data.Runtime `json:"runtime"`
-		Genres  []string      `json:"genres"`
+		Title *string `json:"title"`
+		// Year    *int32        `json:"year"`
+		// Runtime *data.Runtime `json:"runtime"`
+		// Genres  []string      `json:"genres"`
 	}
 
 	// Read JSON from request body into the input struct.
@@ -206,15 +206,15 @@ func (app *application) updateTodo(w http.ResponseWriter, r *http.Request) {
 	if input.Title != nil {
 		todo.Title = *input.Title
 	}
-	if input.Year != nil {
-		todo.Year = *input.Year
-	}
-	if input.Runtime != nil {
-		todo.Runtime = *input.Runtime
-	}
-	if input.Genres != nil {
-		todo.Genres = input.Genres
-	}
+	// if input.Year != nil {
+	// 	todo.Year = *input.Year
+	// }
+	// if input.Runtime != nil {
+	// 	todo.Runtime = *input.Runtime
+	// }
+	// if input.Genres != nil {
+	// 	todo.Genres = input.Genres
+	// }
 
 	// Validate the updated todo record, or return a 422 response.
 	v := validator.New()

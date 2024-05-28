@@ -17,19 +17,19 @@ import (
 //
 //   - GET    /v1/healthcheck   				 Show application information.
 //
-//   - GET    /v1/todos								 Show details of a subset of todos.
+//   - GET    /v1/todos								   Show details of a subset of todos.
 //     [permissions - todos:read]
 //
-//   - POST   /v1/todos								 Create a new todo.
+//   - POST   /v1/todos								   Create a new todo.
 //     [permissions - todos:write]
 //
-//   - GET    /v1/todos/:id	  				 Show details of a specific todo.
+//   - GET    /v1/todos/:id	  				   Show details of a specific todo.
 //     [permissions - todos:read]
 //
-//   - PATCH  /v1/todos/:id						 Update details of a specific todo.
+//   - PATCH  /v1/todos/:id						   Update details of a specific todo.
 //     [permissions - todos:read]
 //
-//   - DELETE /v1/todos/:id	  				 Delete a specific todo.
+//   - DELETE /v1/todos/:id	  				   Delete a specific todo.
 //     [permissions - todos:read]
 //
 //   - POST   /v1/users         				 Register a new user.
