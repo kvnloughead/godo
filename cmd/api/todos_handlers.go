@@ -142,7 +142,9 @@ func (app *application) showTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todo, err := app.models.Todos.Get(id)
+	userID := app.contextGetUser(r).ID
+
+	todo, err := app.models.Todos.Get(id, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
