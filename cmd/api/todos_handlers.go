@@ -134,15 +134,20 @@ func (app *application) createTodo(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// showTodo handles GET requests to the /v1/todos/:id endpoint.
-func (app *application) showTodo(w http.ResponseWriter, r *http.Request) {
+// getTodo handles GET requests to the /v1/todos/:id endpoint. If there is a
+// todo item with matching ID and userID it will be sent in the response.
+//
+// If not, a 404 Not Found response is sent.
+func (app *application) getTodo(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIdParam(r)
 	if err != nil {
 		app.notFoundResponse(w, r)
 		return
 	}
 
-	todo, err := app.models.Todos.Get(id)
+	userID := app.contextGetUser(r).ID
+
+	todo, err := app.models.Todos.GetTodoIfOwned(id, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):

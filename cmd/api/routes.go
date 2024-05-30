@@ -61,7 +61,7 @@ func (app *application) routes() http.Handler {
 	// The /v1/todos endpoints require either todos:read or todos:write permission
 	router.HandlerFunc(http.MethodGet, "/v1/todos", app.requirePermission(data.TodosRead, app.listTodos))
 	router.HandlerFunc(http.MethodPost, "/v1/todos", app.requirePermission(data.TodosWrite, app.createTodo))
-	router.HandlerFunc(http.MethodGet, "/v1/todos/:id", app.requirePermission(data.TodosRead, app.showTodo))
+	router.HandlerFunc(http.MethodGet, "/v1/todos/:id", app.requirePermission(data.TodosRead, app.getTodo))
 	router.HandlerFunc(http.MethodPatch, "/v1/todos/:id", app.requirePermission(data.TodosWrite, app.updateTodo))
 	router.HandlerFunc(http.MethodDelete, "/v1/todos/:id", app.requirePermission(data.TodosWrite, app.deleteTodo))
 
