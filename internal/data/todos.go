@@ -144,26 +144,31 @@ func (m TodoModel) Insert(todo *Todo) error {
 		&todo.ID, &todo.CreatedAt, &todo.Version)
 }
 
-// Get retrieves a a specific record in the todos table by its ID. If the ID
-// argument is less then 1, or if there is no todo with a matching ID in the
-// database, and ErrRecordNotFound is returned. If a todo is found, a pointer
-// to the corresponding Todo struct is returned.
-func (m TodoModel) Get(id int64) (*Todo, error) {
+// GetTodoIfOwned retrieves a a specific record in the todos table by its ID, but only if the current user owns the todo item.
+//
+// An ErrRecordNotFound is returned in the following cases:
+//
+//   - If either the id or userID arguments are less then 1
+//   - If there is no todo with matching id and userID
+//
+// If a todo is found, a pointer to the corresponding Todo struct is returned.
+func (m TodoModel) GetTodoIfOwned(id, userID int64) (*Todo, error) {
 	if id < 1 {
 		return nil, ErrRecordNotFound
 	}
 
 	query := `
-		SELECT id, created_at, title, contexts, projects, priority, completed, version
-		FROM todos WHERE ID = $1`
+		SELECT id, user_id, created_at, title, contexts, projects, priority, completed, version
+		FROM todos WHERE ID = $1 AND user_id = $2`
 
 	var todo Todo
 
 	ctx, cancel := CreateTimeoutContext(QueryTimeout)
 	defer cancel()
 
-	err := m.DB.QueryRowContext(ctx, query, id).Scan(
+	err := m.DB.QueryRowContext(ctx, query, id, userID).Scan(
 		&todo.ID,
+		&todo.UserID,
 		&todo.CreatedAt,
 		&todo.Title,
 		pq.Array(&todo.Contexts),
