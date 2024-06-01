@@ -9,7 +9,7 @@ A todo tracking application written in Go. Features will eventually include:
 
 ## Endpoints that don't require authentication
 
-Usage examples assume you are running the app locally with either `make run/api` or `make run/air`. The API is currently not deployed.
+Usage example s assume you are running the app locally with either `make run/api` or `make run/air`. The API is currently not deployed.
 
 ### GET /v1/healthcheck
 
@@ -141,7 +141,7 @@ curl -H "Authorization: Bearer EZVNRJHUXXXXXXZQGKTXIWDDFQ" localhost:4000/v1/tod
 Add a new todo to the table. The request body must contain a title field with stores the text of the todo item. This is the only required field.
 
 ```bash
-# Minimal example usage
+# Example usage
 curl -X POST -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" -d '{ "title": "(A) do something important @readme +godo" }' localhost:4000/v1/todos
 
 ```
@@ -157,6 +157,27 @@ curl -X POST -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" -d '{ "title"
     "priority": 0,
     "completed": false,
     "version": 1
+  }
+}
+```
+
+### GET /v1/todos/:id
+
+Retrieves a todo by its ID, but only if it is owned by the current user.
+
+If there is no such todo a 404 response is sent.
+
+```bash
+# Example usage
+curl -X POST -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" localhost:4000/v1/todos/1
+```
+
+```json
+// Example response
+{
+  "todo": {
+    "id": 1
+    // ...
   }
 }
 ```
