@@ -171,6 +171,8 @@ func (app *application) getTodo(w http.ResponseWriter, r *http.Request) {
 //
 // If fields are omitted in the request body, or if they are given a null value
 // they will be unchanged.
+//
+// Only todo items with matching ID and userID can be updated.
 func (app *application) updateTodo(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIdParam(r)
 	if err != nil {
@@ -178,8 +180,9 @@ func (app *application) updateTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch existing todo record from DB, returning a 404 if nothing is found.
-	todo, err := app.models.Todos.Get(id)
+	userID := app.contextGetUser(r).ID
+
+	todo, err := app.models.Todos.GetTodoIfOwned(id, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -194,10 +197,11 @@ func (app *application) updateTodo(w http.ResponseWriter, r *http.Request) {
 	// pointers to facilitate partial updates. If a value is not provided, the
 	// pointer will be nil, and we can leave the corresponding field unchanged.
 	var input struct {
-		Title *string `json:"title"`
-		// Year    *int32        `json:"year"`
-		// Runtime *data.Runtime `json:"runtime"`
-		// Genres  []string      `json:"genres"`
+		Title     *string   `json:"title"`
+		Contexts  *[]string `json:"contexts"`
+		Projects  *[]string `json:"projects"`
+		Priority  *string   `json:"priority"` // Will convert to a rune below.
+		Completed *bool     `json:"completed"`
 	}
 
 	// Read JSON from request body into the input struct.
@@ -211,15 +215,22 @@ func (app *application) updateTodo(w http.ResponseWriter, r *http.Request) {
 	if input.Title != nil {
 		todo.Title = *input.Title
 	}
-	// if input.Year != nil {
-	// 	todo.Year = *input.Year
-	// }
-	// if input.Runtime != nil {
-	// 	todo.Runtime = *input.Runtime
-	// }
-	// if input.Genres != nil {
-	// 	todo.Genres = input.Genres
-	// }
+	if input.Contexts != nil {
+		todo.Contexts = *input.Contexts
+	}
+	if input.Projects != nil {
+		todo.Projects = *input.Projects
+	}
+	if input.Priority != nil {
+		if len(*input.Priority) == 1 {
+			todo.Priority = rune((*input.Priority)[0])
+		} else {
+			app.badRequestResponse(w, r, errors.New("priority must be a single character"))
+		}
+	}
+	if input.Completed != nil {
+		todo.Completed = *input.Completed
+	}
 
 	// Validate the updated todo record, or return a 422 response.
 	v := validator.New()
