@@ -181,3 +181,26 @@ curl -X POST -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" localhost:400
   }
 }
 ```
+
+### PATCH /v1/todos/:id
+
+Updates the todo with the provided ID, but only if it is owned by the current user.
+
+If there is no such todo a 404 response is sent.
+
+```bash
+# Example usage
+curl -X PATCH -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" -d '{ "completed": true }' localhost:4000/v1/todos/1
+```
+
+```json
+// Example response
+{
+  "todo": {
+    "id": 1,
+    // ...
+    "completed": true,
+    "version": 2 // version will be incremented
+  }
+}
+```
