@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"regexp"
 	"time"
 
 	validator "github.com/kvnloughead/godo/internal"
@@ -20,7 +21,7 @@ type Todo struct {
 	Title     string    `json:"title"`
 	Contexts  []string  `json:"contexts,omitempty"`
 	Projects  []string  `json:"projects,omitempty"`
-	Priority  rune      `json:"priority"`
+	Priority  string    `json:"priority"`
 	Completed bool      `json:"completed"`
 	Version   int32     `json:"version"`
 }
@@ -273,18 +274,35 @@ func (m TodoModel) Delete(id int64) error {
 //
 //   - There can be between 0 and 5 unique, string-valued projects.
 //
-//   - There can be a priority, a single character between A and Z, or a 0. A
-//     priority of 0 indicates that no priority was specified.
-func ValidateTodo(v *validator.Validator, m *Todo) {
+//   - There can be a priority, a single character between A and Z, or an empty
+//     string.
+func ValidateTodo(v *validator.Validator, t *Todo) {
 
-	v.Check(m.Title != "", "title", "must be provided")
-	v.Check(len(m.Title) < 500, "title", "must be less than 500 bytes")
+	v.Check(t.Title != "", "title", "must be provided")
+	v.Check(len(t.Title) < 500, "title", "must be less than 500 bytes")
 
-	v.Check(len(m.Contexts) <= 5, "contexts", "must be no more than 5 contexts")
-	v.Check(validator.Unique(m.Contexts), "contexts", "must not contain duplicate values")
+	v.Check(len(t.Contexts) <= 5, "contexts", "must be no more than 5 contexts")
+	v.Check(validator.Unique(t.Contexts), "contexts", "must not contain duplicate values")
 
-	v.Check(len(m.Projects) <= 5, "contexts", "must be no more than 5 projects")
-	v.Check(validator.Unique(m.Projects), "projects", "must not contain duplicate values")
+	v.Check(len(t.Projects) <= 5, "contexts", "must be no more than 5 projects")
+	v.Check(validator.Unique(t.Projects), "projects", "must not contain duplicate values")
 
-	v.Check(m.Priority == 0 || (m.Priority >= 'A' && m.Priority <= 'Z'), "priority", "must be a capital letter (A to Z)")
+	v.Check(priorityIsValid(t), "priority", "must be a capital letter (A to Z) or empty string")
+
+}
+
+// priorityIsValid returns true if the todo item's priority field is valid.
+// Valid options are letters from A to Z and the empty string.
+func priorityIsValid(t *Todo) bool {
+	if len(t.Priority) == 0 {
+		return true
+	}
+
+	if len(t.Priority) != 1 {
+		return false
+	}
+
+	matched, _ := regexp.MatchString("^[A-Z]$", t.Priority)
+
+	return matched
 }

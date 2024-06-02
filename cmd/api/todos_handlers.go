@@ -90,7 +90,7 @@ func (app *application) createTodo(w http.ResponseWriter, r *http.Request) {
 		Title     string   `json:"title"`
 		Contexts  []string `json:"contexts"`
 		Projects  []string `json:"projects"`
-		Priority  rune     `json:"priority"`
+		Priority  string   `json:"priority"`
 		Completed bool     `json:"completed"`
 	}
 
@@ -200,7 +200,7 @@ func (app *application) updateTodo(w http.ResponseWriter, r *http.Request) {
 		Title     *string   `json:"title"`
 		Contexts  *[]string `json:"contexts"`
 		Projects  *[]string `json:"projects"`
-		Priority  *string   `json:"priority"` // Will convert to a rune below.
+		Priority  *string   `json:"priority"`
 		Completed *bool     `json:"completed"`
 	}
 
@@ -222,11 +222,7 @@ func (app *application) updateTodo(w http.ResponseWriter, r *http.Request) {
 		todo.Projects = *input.Projects
 	}
 	if input.Priority != nil {
-		if len(*input.Priority) == 1 {
-			todo.Priority = rune((*input.Priority)[0])
-		} else {
-			app.badRequestResponse(w, r, errors.New("priority must be a single character"))
-		}
+		todo.Priority = *input.Priority
 	}
 	if input.Completed != nil {
 		todo.Completed = *input.Completed
