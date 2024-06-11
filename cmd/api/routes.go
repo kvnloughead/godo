@@ -27,10 +27,10 @@ import (
 //     [permissions - todos:read]
 //
 //   - PATCH  /v1/todos/:id						   Update details of a specific todo.
-//     [permissions - todos:read]
+//     [permissions - todos:write]
 //
 //   - DELETE /v1/todos/:id	  				   Delete a specific todo.
-//     [permissions - todos:read]
+//     [permissions - todos:write]
 //
 //   - POST   /v1/users         				 Register a new user.
 //
