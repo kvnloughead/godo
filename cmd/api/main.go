@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kvnloughead/godo/internal/app"
 	"github.com/kvnloughead/godo/internal/data"
 	"github.com/kvnloughead/godo/internal/mailer"
 	"github.com/kvnloughead/godo/internal/vcs"
@@ -24,7 +25,7 @@ var (
 
 // The application struct is used for dependency injection.
 type application struct {
-	config Config
+	config app.Config
 	logger *slog.Logger
 	models data.Models
 	mailer mailer.Mailer
@@ -37,7 +38,7 @@ type application struct {
 
 func main() {
 	// Parse CLI flags into config struct (to be added to dependencies).
-	var cfg = LoadConfig()
+	var cfg = app.LoadConfig()
 
 	displayVersion := flag.Bool("version", false, "Display version and exit")
 
@@ -81,7 +82,7 @@ func main() {
 
 // openDB creates an sql.DB connection pool for the supplied DSN and returns it.
 // If a connection can't be established within 5 seconds, an error is returned.
-func openDB(cfg Config) (*sql.DB, error) {
+func openDB(cfg app.Config) (*sql.DB, error) {
 	db, err := sql.Open("postgres", cfg.DB.DSN)
 	if err != nil {
 		return nil, err

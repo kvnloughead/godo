@@ -8,13 +8,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kvnloughead/godo/internal/app"
 	"github.com/kvnloughead/godo/internal/assert"
 )
 
 func TestHealthcheck(t *testing.T) {
 	app := &application{
 		logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
-		config: Config{Env: "testing"},
+		config: app.Config{Env: "testing"},
 	}
 
 	ts := httptest.NewServer(app.routes())
