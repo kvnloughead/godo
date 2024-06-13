@@ -22,11 +22,11 @@ import (
 //
 // If the app is unable to construct the response a 500 Internal Server Error
 // is sent with no body.
-func (app *application) healthcheck(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) healthcheck(w http.ResponseWriter, r *http.Request) {
 	env := envelope{
 		"status": "available",
 		"system_info": map[string]string{
-			"environment": app.config.Env,
+			"environment": app.Config.Env,
 			"version":     version,
 		},
 	}

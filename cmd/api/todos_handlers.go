@@ -13,7 +13,7 @@ import (
 //
 // Various options for filtering, sorting, and pagination are available. See
 // TodoModel.GetAll for details.
-func (app *application) listTodos(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) listTodos(w http.ResponseWriter, r *http.Request) {
 	// input is an anonymous struct intended to store the query params for
 	// filtering, sorting, and pagination.
 	var input struct {
@@ -51,7 +51,7 @@ func (app *application) listTodos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todos, paginationData, err := app.models.Todos.GetAll(
+	todos, paginationData, err := app.Models.Todos.GetAll(
 		input.Title,
 		app.contextGetUser(r).ID,
 		input.Contexts,
@@ -83,7 +83,7 @@ func (app *application) listTodos(w http.ResponseWriter, r *http.Request) {
 //
 // Request bodies are validated by ValidateTodo. A failedValidationResponse
 // error is sent if one or more fields fails validation.
-func (app *application) createTodo(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) createTodo(w http.ResponseWriter, r *http.Request) {
 	// Struct to store the data from the response's body. The struct's fields must
 	// be exported to use it with json.NewDecoder.
 	var input struct {
@@ -117,7 +117,7 @@ func (app *application) createTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.models.Todos.Insert(todo)
+	err = app.Models.Todos.Insert(todo)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -138,7 +138,7 @@ func (app *application) createTodo(w http.ResponseWriter, r *http.Request) {
 // todo item with matching ID and userID it will be sent in the response.
 //
 // If not, a 404 Not Found response is sent.
-func (app *application) getTodo(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) getTodo(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIdParam(r)
 	if err != nil {
 		app.notFoundResponse(w, r)
@@ -147,7 +147,7 @@ func (app *application) getTodo(w http.ResponseWriter, r *http.Request) {
 
 	userID := app.contextGetUser(r).ID
 
-	todo, err := app.models.Todos.GetTodoIfOwned(id, userID)
+	todo, err := app.Models.Todos.GetTodoIfOwned(id, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -173,7 +173,7 @@ func (app *application) getTodo(w http.ResponseWriter, r *http.Request) {
 // they will be unchanged.
 //
 // Only todo items with matching ID and userID can be updated.
-func (app *application) updateTodo(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) updateTodo(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIdParam(r)
 	if err != nil {
 		app.notFoundResponse(w, r)
@@ -182,7 +182,7 @@ func (app *application) updateTodo(w http.ResponseWriter, r *http.Request) {
 
 	userID := app.contextGetUser(r).ID
 
-	todo, err := app.models.Todos.GetTodoIfOwned(id, userID)
+	todo, err := app.Models.Todos.GetTodoIfOwned(id, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -237,7 +237,7 @@ func (app *application) updateTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Pass updated todo record to Todos.Update().
-	err = app.models.Todos.Update(todo)
+	err = app.Models.Todos.Update(todo)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrEditConflict):
@@ -261,7 +261,7 @@ func (app *application) updateTodo(w http.ResponseWriter, r *http.Request) {
 // JSON response: { "message": "todo successfully deleted" }
 //
 // If the document is not found, a 404 response is sent.
-func (app *application) deleteTodo(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) deleteTodo(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIdParam(r)
 	if err != nil {
 		app.notFoundResponse(w, r)
@@ -269,7 +269,7 @@ func (app *application) deleteTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete record or send an error response.
-	err = app.models.Todos.Delete(id)
+	err = app.Models.Todos.Delete(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):

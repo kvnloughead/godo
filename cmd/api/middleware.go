@@ -23,7 +23,7 @@ import (
 //     server after sending the response.
 //  2. Sending a 500 Internal Server Error response containing the error from
 //     the recovered panic.
-func (app *application) recoverPanic(next http.Handler) http.Handler {
+func (app *APIApplication) recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -45,7 +45,7 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 //
 // If the limit is exceeded, a 429 Too Many Request response is sent to the
 // client.
-func (app *application) rateLimit(next http.Handler) http.Handler {
+func (app *APIApplication) rateLimit(next http.Handler) http.Handler {
 	// Struct client contains data corresponding to a client IP. It has a rate
 	// limiter property, and a lastSeen property used to remove unused clients
 	// from the clients map.
@@ -76,7 +76,7 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 	}()
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if app.config.Limiter.Enabled {
+		if app.Config.Limiter.Enabled {
 			// Get IP address. If an X-Forwarded-For or X-Real-IP header is found, the
 			// IP is taken from there. Otherwise it is taken from r.RemoteAddr.
 			ip := realip.FromRequest(r)
@@ -86,8 +86,8 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 			// If no limiter exists for current IP, add it to the map of clients.
 			if _, ok := clients[ip]; !ok {
 				limiter := rate.NewLimiter(
-					rate.Limit(app.config.Limiter.RPS),
-					app.config.Limiter.Burst,
+					rate.Limit(app.Config.Limiter.RPS),
+					app.Config.Limiter.Burst,
 				)
 				clients[ip] = &client{limiter: limiter}
 			}
@@ -119,7 +119,7 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 //
 // If everything checks out, the user's data is added to the request context.
 // Otherwise, the anonymous user is added to the request context.
-func (app *application) authenticate(next http.Handler) http.Handler {
+func (app *APIApplication) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// The "Vary: Authorization" header indicates to caches that the response
 		// may vary based on the value of the request's Authorization header.
@@ -151,7 +151,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		}
 
 		// Get user from DB. If record isn't found we send a 401 response.
-		user, err := app.models.Users.GetForToken(data.Authentication, token)
+		user, err := app.Models.Users.GetForToken(data.Authentication, token)
 		if err != nil {
 			switch {
 			case errors.Is(err, data.ErrRecordNotFound):
@@ -175,7 +175,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 // This middleware accepts and returns an http.HandlerFunc, as opposed to
 // http.Handler, which allows us to wrap our individual /v1/todo** routes
 // with it.
-func (app *application) requireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
+func (app *APIApplication) requireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user := app.contextGetUser(r)
 
@@ -202,7 +202,7 @@ func (app *application) requireAuthenticatedUser(next http.HandlerFunc) http.Han
 // This middleware accepts and returns an http.HandlerFunc, as opposed to
 // http.Handler, which allows us to wrap our individual /v1/todo** routes
 // with it.
-func (app *application) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+func (app *APIApplication) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
 	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user := app.contextGetUser(r)
 
@@ -228,13 +228,13 @@ func (app *application) requireActivatedUser(next http.HandlerFunc) http.Handler
 // This middleware accepts and returns an http.HandlerFunc, as opposed to
 // http.Handler, which allows us to wrap our individual /v1/todo** routes
 // with it.
-func (app *application) requirePermission(permission data.PermissionCode, next http.HandlerFunc) http.HandlerFunc {
+func (app *APIApplication) requirePermission(permission data.PermissionCode, next http.HandlerFunc) http.HandlerFunc {
 	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// There is no need to check IsAnonymous, this is handled by an earlier
 		// middleware in the chain.
 		user := app.contextGetUser(r)
 
-		permissions, err := app.models.Permissions.GetAllForUser(user.ID)
+		permissions, err := app.Models.Permissions.GetAllForUser(user.ID)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return
@@ -257,7 +257,7 @@ func (app *application) requirePermission(permission data.PermissionCode, next h
 //   - use the OPTIONS method
 //   - have an Origin header
 //   - have an Access-Control-Allow-Methods header
-func (app *application) isPreflight(r *http.Request) bool {
+func (app *APIApplication) isPreflight(r *http.Request) bool {
 	return r.Method == http.MethodOptions &&
 		r.Header.Get("Origin") != "" &&
 		r.Header.Get("Access-Control-Request-Method") != ""
@@ -272,7 +272,7 @@ func (app *application) isPreflight(r *http.Request) bool {
 //
 // This middleware allows the Authorization header in cross-origin requests, so
 // it it critical to not set the Access-Control-Allow-Origin header to *.
-func (app *application) enableCORS(next http.Handler) http.Handler {
+func (app *APIApplication) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Tell caches that response may vary depending on the value of the
 		// following request headers.
@@ -282,8 +282,8 @@ func (app *application) enableCORS(next http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 
 		if origin != "" {
-			for i := range app.config.Cors.TrustedOrigins {
-				if app.config.Cors.TrustedOrigins[i] == origin {
+			for i := range app.Config.Cors.TrustedOrigins {
+				if app.Config.Cors.TrustedOrigins[i] == origin {
 					w.Header().Set("Access-Control-Allow-Origin", origin)
 
 					// If the request is a preflight request, set the necessary headers
@@ -308,7 +308,7 @@ func (app *application) enableCORS(next http.Handler) http.Handler {
 
 // The logRequest middleware logs info about each HTTP request, including the
 // request's IP, protocol, method, and URI.
-func (app *application) logRequest(next http.Handler) http.Handler {
+func (app *APIApplication) logRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var (
 			ip       = r.RemoteAddr
@@ -317,7 +317,7 @@ func (app *application) logRequest(next http.Handler) http.Handler {
 			uri      = r.URL.RequestURI()
 		)
 
-		app.logger.Info("received request", "ip", ip, "protocol", protocol, "method", method, "uri", uri)
+		app.Logger.Info("received request", "ip", ip, "protocol", protocol, "method", method, "uri", uri)
 
 		next.ServeHTTP(w, r)
 	})
@@ -392,7 +392,7 @@ func (mw *metricsResponseWriter) Unwrap() http.ResponseWriter {
 //   - total responses sent
 //   - total processing time (in microseconds)
 //   - a map of the total number responses sent for each status code
-func (app *application) metrics(next http.Handler) http.Handler {
+func (app *APIApplication) metrics(next http.Handler) http.Handler {
 	var (
 		totalRequestsRecieved           = expvar.NewInt("total_requests_recieved")
 		totalResponsesSent              = expvar.NewInt("total_responses_sent")

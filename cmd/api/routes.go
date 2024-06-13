@@ -49,7 +49,7 @@ import (
 //
 // Finally, the router is wrapped with the recoverPanic middleware to handle any
 // panics that occur during request processing.
-func (app *application) routes() http.Handler {
+func (app *APIApplication) Routes() http.Handler {
 	router := httprouter.New()
 
 	// Set custom error handlers for 404 and 405 errors.

@@ -18,14 +18,14 @@ import (
 // serve also establishes a coroutine that listens for SIGTERM and SIGINT
 // signals. If either are found, the server's Shutdown() method is invoked,
 // which gracefully shuts down the server.
-func (app *application) serve() error {
+func (app *APIApplication) serve() error {
 	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", app.config.Port),
-		Handler:      app.routes(),
+		Addr:         fmt.Sprintf(":%d", app.Config.Port),
+		Handler:      app.Routes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
-		ErrorLog:     slog.NewLogLogger(app.logger.Handler(), slog.LevelError),
+		ErrorLog:     slog.NewLogLogger(app.Logger.Handler(), slog.LevelError),
 	}
 
 	shutDownErr := make(chan error)
@@ -40,7 +40,7 @@ func (app *application) serve() error {
 		s := <-quit
 
 		// Log a message and quit application if SIGINT or SIGTERM is caught.
-		app.logger.Info("shutting down server", "signal", s.String())
+		app.Logger.Info("shutting down server", "signal", s.String())
 
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
@@ -51,19 +51,19 @@ func (app *application) serve() error {
 			shutDownErr <- err
 		}
 
-		app.logger.Info("completing background tasks", "addr", srv.Addr)
+		app.Logger.Info("completing background tasks", "addr", srv.Addr)
 
 		// Block until WaitGroup counter of goroutines is 0.
-		app.wg.Wait()
+		app.WG.Wait()
 		shutDownErr <- nil
 	}()
 
-	app.logger.Info(
+	app.Logger.Info(
 		"Starting server",
 		"port",
-		app.config.Port,
+		app.Config.Port,
 		"env",
-		app.config.Env,
+		app.Config.Env,
 	)
 
 	// If an http.ErrServerClosed is returned by ListenAndServe() we ignore it
@@ -79,7 +79,7 @@ func (app *application) serve() error {
 		return err
 	}
 
-	app.logger.Info("stopped server", "addr", srv.Addr)
+	app.Logger.Info("stopped server", "addr", srv.Addr)
 
 	return nil
 }

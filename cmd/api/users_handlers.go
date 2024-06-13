@@ -20,9 +20,9 @@ import (
 // database.
 //
 // On successful registration, a token is generated securely and encrypted with
-// SHA-256. This token is sent to the user in a a welcome email via app.mailer,
+// SHA-256. This token is sent to the user in a a welcome email via app.Mailer,
 // with instructions on how to activate the account.
-func (app *application) registerUser(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) registerUser(w http.ResponseWriter, r *http.Request) {
 	// Struct to store the data from the responses body. The struct's fields must
 	// be exported to use it with json.NewDecoder.
 	var input struct {
@@ -61,7 +61,7 @@ func (app *application) registerUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert new record into DB, if possible.
-	err = app.models.Users.Insert(user)
+	err = app.Models.Users.Insert(user)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrDuplicateEmail):
@@ -74,14 +74,14 @@ func (app *application) registerUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create activation token and add to database.
-	token, err := app.models.Tokens.New(user.ID, 72*time.Hour, data.Activation)
+	token, err := app.Models.Tokens.New(user.ID, 72*time.Hour, data.Activation)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
 	// Grant user the "todos:read" permission.
-	err = app.models.Permissions.AddForUser(user.ID, data.TodosRead)
+	err = app.Models.Permissions.AddForUser(user.ID, data.TodosRead)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -96,9 +96,9 @@ func (app *application) registerUser(w http.ResponseWriter, r *http.Request) {
 			Token: token,
 			User:  user,
 		}
-		err = app.mailer.Send(user.Email, "user_welcome.tmpl", data)
+		err = app.Mailer.Send(user.Email, "user_welcome.tmpl", data)
 		if err != nil {
-			app.logger.Error(err.Error())
+			app.Logger.Error(err.Error())
 		}
 	})
 
@@ -110,7 +110,7 @@ func (app *application) registerUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) activateUser(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) activateUser(w http.ResponseWriter, r *http.Request) {
 	// Retrieve token from body of request and validate it.
 	var input struct {
 		TokenPlaintext string `json:"token"`
@@ -130,7 +130,7 @@ func (app *application) activateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Attempt to get the corresponding user.
-	user, err := app.models.Users.GetForToken(
+	user, err := app.Models.Users.GetForToken(
 		data.Activation,
 		input.TokenPlaintext,
 	)
@@ -148,7 +148,7 @@ func (app *application) activateUser(w http.ResponseWriter, r *http.Request) {
 
 	// If user was found, activate them and update the record.
 	user.Activated = true
-	err = app.models.Users.Update(user)
+	err = app.Models.Users.Update(user)
 
 	if err != nil {
 		switch {
@@ -161,14 +161,14 @@ func (app *application) activateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete all activation tokens for the user.
-	err = app.models.Tokens.DeleteAllForUser(data.Activation, user.ID)
+	err = app.Models.Tokens.DeleteAllForUser(data.Activation, user.ID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
 	// Grant activated user "todos:write" permission.
-	err = app.models.Permissions.AddForUser(user.ID, data.TodosWrite)
+	err = app.Models.Permissions.AddForUser(user.ID, data.TodosWrite)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

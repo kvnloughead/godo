@@ -9,12 +9,9 @@ import (
 	"log/slog"
 	"os"
 	"runtime"
-	"sync"
 	"time"
 
-	"github.com/kvnloughead/godo/internal/app"
-	"github.com/kvnloughead/godo/internal/data"
-	"github.com/kvnloughead/godo/internal/mailer"
+	"github.com/kvnloughead/godo/internal/injector"
 	"github.com/kvnloughead/godo/internal/vcs"
 	_ "github.com/lib/pq"
 )
@@ -23,22 +20,19 @@ var (
 	version = vcs.Version()
 )
 
-// The application struct is used for dependency injection.
-type application struct {
-	config app.Config
-	logger *slog.Logger
-	models data.Models
-	mailer mailer.Mailer
+// APIApplication is an instance of injector.Application. It injects
+// dependencies and stores API specific methods.
+type APIApplication struct {
+	*injector.Application
+}
 
-	// The WaitGroup instance allows us to track goroutines in progress, to
-	// prevent shutdown until they are all completed. No need for initialization,
-	// the zero-valued sync.WaitGroup is useable, with counter set to 0.
-	wg sync.WaitGroup
+func NewAPIApplication(app *injector.Application) *APIApplication {
+	return &APIApplication{Application: app}
 }
 
 func main() {
 	// Parse CLI flags into config struct (to be added to dependencies).
-	var cfg = app.LoadConfig()
+	var cfg = injector.LoadConfig()
 
 	displayVersion := flag.Bool("version", false, "Display version and exit")
 
@@ -65,24 +59,20 @@ func main() {
 	// Set additional debug variables, accessible at GET /debug/vars.
 	setDebugVars(db)
 
-	app := application{
-		config: cfg,
-		logger: logger,
-		models: data.NewModels(db),
-		mailer: mailer.New(cfg.SMTP.Host, cfg.SMTP.Port, cfg.SMTP.Username,
-			cfg.SMTP.Password, cfg.SMTP.Sender),
-	}
+	baseApp := injector.NewApplication(cfg, logger, db)
+	app := NewAPIApplication(baseApp)
 
 	err = app.serve()
 	if err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
+
 }
 
 // openDB creates an sql.DB connection pool for the supplied DSN and returns it.
 // If a connection can't be established within 5 seconds, an error is returned.
-func openDB(cfg app.Config) (*sql.DB, error) {
+func openDB(cfg injector.Config) (*sql.DB, error) {
 	db, err := sql.Open("postgres", cfg.DB.DSN)
 	if err != nil {
 		return nil, err

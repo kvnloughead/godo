@@ -22,7 +22,7 @@ import (
 // If the request is successful, a new activation token is created and added to
 // the tokens table, an background process is spawned to send the user a
 // confirmation email, and an http.StatusAccepted response is sent.
-func (app *application) createActivationToken(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) createActivationToken(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Email string `json:"email"`
 	}
@@ -41,7 +41,7 @@ func (app *application) createActivationToken(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	user, err := app.models.Users.GetByEmail(input.Email)
+	user, err := app.Models.Users.GetByEmail(input.Email)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -58,7 +58,7 @@ func (app *application) createActivationToken(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	token, err := app.models.Tokens.New(user.ID, 72*time.Hour, data.Activation)
+	token, err := app.Models.Tokens.New(user.ID, 72*time.Hour, data.Activation)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -67,9 +67,9 @@ func (app *application) createActivationToken(w http.ResponseWriter, r *http.Req
 	app.background(func() {
 		data := struct{ Token *data.Token }{Token: token}
 
-		err = app.mailer.Send(user.Email, "token_activation.tmpl", data)
+		err = app.Mailer.Send(user.Email, "token_activation.tmpl", data)
 		if err != nil {
-			app.logger.Error(err.Error())
+			app.Logger.Error(err.Error())
 		}
 	})
 
@@ -101,7 +101,7 @@ func (app *application) createActivationToken(w http.ResponseWriter, r *http.Req
 //	        "expiry": "2024-03-03T17:12:34.711714248-05:00"
 //	    }
 //	}
-func (app *application) createAuthenticationToken(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) createAuthenticationToken(w http.ResponseWriter, r *http.Request) {
 	// Read user credentials from request body into the input struct.
 	var input struct {
 		Email    string `json:"email"`
@@ -124,7 +124,7 @@ func (app *application) createAuthenticationToken(w http.ResponseWriter, r *http
 
 	// Retrieve user from users table. If a record is not found, we send a 401
 	// "invalid credentials" response.
-	user, err := app.models.Users.GetByEmail(input.Email)
+	user, err := app.Models.Users.GetByEmail(input.Email)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -149,7 +149,7 @@ func (app *application) createAuthenticationToken(w http.ResponseWriter, r *http
 
 	// If the credentials check out we generate a token with a 24 hour expiry and
 	// an "authentication" scope.
-	token, err := app.models.Tokens.New(user.ID, 24*time.Hour,
+	token, err := app.Models.Tokens.New(user.ID, 24*time.Hour,
 		data.Authentication)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

@@ -4,7 +4,7 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"github.com/kvnloughead/godo/internal/data"
+	// "github.com/kvnloughead/godo/internal/data"
 	"github.com/spf13/cobra"
 )
 
@@ -14,8 +14,8 @@ var addCmd = &cobra.Command{
 	Short: "Add a new todo item with the given text.",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		text := args[0]
-		todo := data.Todo{Title: text}
+		// text := args[0]
+		// todo := data.Todo{Title: text}
 
 	},
 }

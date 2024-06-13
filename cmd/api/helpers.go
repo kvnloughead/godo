@@ -14,28 +14,6 @@ import (
 	validator "github.com/kvnloughead/godo/internal"
 )
 
-// envelope is a type used for wrapping JSON responses to ensure a consistent
-// response structure. It is a map with string keys and values of any type.
-//
-// It is commonly in handlers and middleware to wrap responses. For example,
-// error responses are typically wrapped like this:
-//
-//	envelope{"error": "detailed error message"}
-type envelope map[string]any
-
-// readIdParam reads an ID param from the request context and parses it as an
-// int64. If the ID doesn't parse to a positive integer, an error is returned.
-func (app *application) readIdParam(r *http.Request) (int64, error) {
-	params := httprouter.ParamsFromContext(r.Context())
-
-	id, err := strconv.ParseInt(params.ByName("id"), 10, 64)
-	if err != nil || id < 1 {
-		return 0, errors.New("ID must be a positive integer")
-	}
-
-	return id, nil
-}
-
 // writeJSON marshals the data into JSON, then prepares and sends the response.
 // The response is sent with
 //
@@ -43,7 +21,7 @@ func (app *application) readIdParam(r *http.Request) (int64, error) {
 //  2. The status code that was supplied as an argument.
 //
 // Errors are simply returned to the caller.
-func (app *application) writeJSON(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
+func (app *APIApplication) writeJSON(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
 	// Marshal data map into JSON for the response, indenting for readability.
 	js, err := json.MarshalIndent(data, "", "    ")
 	if err != nil {
@@ -91,7 +69,7 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data envelo
 //     error handling in all of our handlers.
 //
 // All other errors are returned as-is.
-func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any) error {
+func (app *APIApplication) readJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 	// Restrict size of request bodyy to 1MB.
 	maxBytes := 1_048_576
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
@@ -150,9 +128,31 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 	return nil
 }
 
+// envelope is a type used for wrapping JSON responses to ensure a consistent
+// response structure. It is a map with string keys and values of any type.
+//
+// It is commonly in handlers and middleware to wrap responses. For example,
+// error responses are typically wrapped like this:
+//
+//	envelope{"error": "detailed error message"}
+type envelope map[string]any
+
+// readIdParam reads an ID param from the request context and parses it as an
+// int64. If the ID doesn't parse to a positive integer, an error is returned.
+func (app *APIApplication) readIdParam(r *http.Request) (int64, error) {
+	params := httprouter.ParamsFromContext(r.Context())
+
+	id, err := strconv.ParseInt(params.ByName("id"), 10, 64)
+	if err != nil || id < 1 {
+		return 0, errors.New("ID must be a positive integer")
+	}
+
+	return id, nil
+}
+
 // readQueryString returns the value of the key in the provided query string
 // map. If the value is an empty string, the default value is returned instead.
-func (app *application) readQueryString(qs url.Values, key string, defaultValue string) string {
+func (app *APIApplication) readQueryString(qs url.Values, key string, defaultValue string) string {
 	s := qs.Get(key)
 	if s == "" {
 		return defaultValue
@@ -163,7 +163,7 @@ func (app *application) readQueryString(qs url.Values, key string, defaultValue 
 // readQueryCSV reads a CSV field from the query string argument. The CSV
 // string is then split into a slice of strings and returned. If the field
 // is empty, the default value is returned.
-func (app *application) readQueryCSV(qs url.Values, key string, defaultValue []string) []string {
+func (app *APIApplication) readQueryCSV(qs url.Values, key string, defaultValue []string) []string {
 	s := qs.Get(key)
 	if s == "" {
 		return defaultValue
@@ -175,7 +175,7 @@ func (app *application) readQueryCSV(qs url.Values, key string, defaultValue []s
 // If the field is empty, the default value is returned. If the field can't be
 // converted to an integer, the default value is returned, and an error is
 // added to the validator instance.
-func (app *application) readQueryInt(qs url.Values, key string, defaultValue int, v *validator.Validator) int {
+func (app *APIApplication) readQueryInt(qs url.Values, key string, defaultValue int, v *validator.Validator) int {
 	s := qs.Get(key)
 
 	if s == "" {
@@ -192,21 +192,21 @@ func (app *application) readQueryInt(qs url.Values, key string, defaultValue int
 }
 
 // The background method launches a background goroutine. This goroutine
-// recovers from panics, logging the resulting errors with app.logger, and
+// recovers from panics, logging the resulting errors with app.Logger, and
 // calls the function argument.
 //
-// Goroutines are tracked via the app.wg WaitGroup instance, and this counter
+// Goroutines are tracked via the app.WG WaitGroup instance, and this counter
 // is checked before shutting down the application. See app.serve() for details.
-func (app *application) background(fn func()) {
+func (app *APIApplication) background(fn func()) {
 	// Increment WaitGroup counter.
-	app.wg.Add(1)
+	app.WG.Add(1)
 	go func() {
 		// Decrement WaitGroup counter after completion.
-		defer app.wg.Done()
+		defer app.WG.Done()
 
 		defer func() {
 			if err := recover(); err != nil {
-				app.logger.Error(fmt.Sprintf("%v", err))
+				app.Logger.Error(fmt.Sprintf("%v", err))
 			}
 		}()
 

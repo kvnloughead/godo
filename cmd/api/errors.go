@@ -6,13 +6,13 @@ import (
 )
 
 // logError logs an error message, as well as the request method and URL.
-func (app *application) logError(r *http.Request, errMsg string) {
+func (app *APIApplication) logError(r *http.Request, errMsg string) {
 	var (
 		method = r.Method
 		uri    = r.URL.RequestURI() // returns /path?query from the request URL
 	)
 
-	app.logger.Error(errMsg, "method", method, "uri", uri)
+	app.Logger.Error(errMsg, "method", method, "uri", uri)
 }
 
 // The errorResponse helper sends arbitrary, JSON formatted errors to the
@@ -24,7 +24,7 @@ func (app *application) logError(r *http.Request, errMsg string) {
 // a blank response with a 500 status code.
 //
 // Error message are also logged to the terminal via app.logError().
-func (app *application) errorResponse(w http.ResponseWriter, r *http.Request, status int, message any) {
+func (app *APIApplication) errorResponse(w http.ResponseWriter, r *http.Request, status int, message any) {
 	env := envelope{"error": message}
 
 	// Log the error.
@@ -47,7 +47,7 @@ func (app *application) errorResponse(w http.ResponseWriter, r *http.Request, st
 // The serverErrorResponse helper logs an unexpected error at runtime.
 // It logs the detailed error message, and uses app.errorResponse to send a 500
 // Internal Server Error with a generic error message to the client.
-func (app *application) serverErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
+func (app *APIApplication) serverErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
 	app.logError(r, err.Error())
 
 	msg := "the server encountered a problem and couldn't process your request"
@@ -56,14 +56,14 @@ func (app *application) serverErrorResponse(w http.ResponseWriter, r *http.Reque
 
 // notFoundResponse sends JSON response with a 404 status code, and logs it
 // using app.errorResponse().
-func (app *application) notFoundResponse(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) notFoundResponse(w http.ResponseWriter, r *http.Request) {
 	msg := "the requested resource cannot be found"
 	app.errorResponse(w, r, http.StatusNotFound, msg)
 }
 
 // methodNotAllowedResponse sends a JSON response with a 405 status code, and
 // logs it using app.errorResponse().
-func (app *application) methodNotAllowedResponse(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) methodNotAllowedResponse(w http.ResponseWriter, r *http.Request) {
 	msg := fmt.Sprintf("the %s method is not allowed for this resource", r.Method)
 	app.errorResponse(w, r, http.StatusMethodNotAllowed, msg)
 }
@@ -71,33 +71,33 @@ func (app *application) methodNotAllowedResponse(w http.ResponseWriter, r *http.
 // badRequestResponse sends a JSON response with a 400 status code, and logs it
 // using app.errorResponse(). It accepts an error argument and includes it in the
 // response.
-func (app *application) badRequestResponse(w http.ResponseWriter, r *http.Request, err error) {
+func (app *APIApplication) badRequestResponse(w http.ResponseWriter, r *http.Request, err error) {
 	app.errorResponse(w, r, http.StatusBadRequest, err.Error())
 }
 
 // failedValidationResponse sends a JSON response with a 422 status code, and logs it using app.errorResponse(). It accepts a map of errors and their messages and sends them in the response.
-func (app *application) failedValidationResponse(w http.ResponseWriter, r *http.Request, errors map[string]string) {
+func (app *APIApplication) failedValidationResponse(w http.ResponseWriter, r *http.Request, errors map[string]string) {
 	app.errorResponse(w, r, http.StatusUnprocessableEntity, errors)
 }
 
 // editConflictResponse sends a JSON response with a 409 status code and a
 // message that indicates a conflict while attempting to edit a resource. It
 // also and logs the error using app.errorResponse().
-func (app *application) editConflictResponse(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) editConflictResponse(w http.ResponseWriter, r *http.Request) {
 	msg := "unable to update the record due to an edit conflict, please try again"
 	app.errorResponse(w, r, http.StatusConflict, msg)
 }
 
 // rateLimitExceededReponse sends a JSON response with a 429 status code and a
 // message that indicates that the rate limit has been exceeded.
-func (app *application) rateLimitExceededReponse(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) rateLimitExceededReponse(w http.ResponseWriter, r *http.Request) {
 	msg := "rate limit exceeded"
 	app.errorResponse(w, r, http.StatusTooManyRequests, msg)
 }
 
 // notFoundResponse sends JSON response with a 404 status code, and logs it
 // using app.errorResponse().
-func (app *application) invalidCredentialsResponse(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) invalidCredentialsResponse(w http.ResponseWriter, r *http.Request) {
 	msg := "invalid authentication credentials"
 	app.errorResponse(w, r, http.StatusUnauthorized, msg)
 }
@@ -110,7 +110,7 @@ func (app *application) invalidCredentialsResponse(w http.ResponseWriter, r *htt
 // This response helper is intended for use as a generic response to invalid
 // attempts at authentication. For example, if the authentication header was
 // missing or malformed.
-func (app *application) invalidAuthenticationTokenResponse(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) invalidAuthenticationTokenResponse(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("WWW-Authenticate", "Bearer")
 	msg := "invalid authentication token"
 	app.errorResponse(w, r, http.StatusUnauthorized, msg)
@@ -119,21 +119,21 @@ func (app *application) invalidAuthenticationTokenResponse(w http.ResponseWriter
 // An authenticationRequiredResponse is sent with a 401 status code when an
 // unauthenticated user attempts to access a resource that requires
 // authentication.
-func (app *application) authenticationRequiredResponse(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) authenticationRequiredResponse(w http.ResponseWriter, r *http.Request) {
 	msg := "you must be authenticated to access this resource"
 	app.errorResponse(w, r, http.StatusUnauthorized, msg)
 }
 
 // An activationRequiredResponse is sent with a 403 status code when an
 // unactivated user attempts to access a resource that requires activation.
-func (app *application) activationRequiredResponse(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) activationRequiredResponse(w http.ResponseWriter, r *http.Request) {
 	msg := "your user account must be activated to access this resource"
 	app.errorResponse(w, r, http.StatusForbidden, msg)
 }
 
 // An permissionRequiredResponse is sent with a 403 status code when a user
 // attempts to access a resource that they don't have permission to access.
-func (app *application) permissionRequiredResponse(w http.ResponseWriter, r *http.Request) {
+func (app *APIApplication) permissionRequiredResponse(w http.ResponseWriter, r *http.Request) {
 	msg := "your user account doesn't have the necessary permissions to access this resource"
 	app.errorResponse(w, r, http.StatusForbidden, msg)
 }

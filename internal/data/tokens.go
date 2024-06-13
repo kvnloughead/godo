@@ -30,7 +30,7 @@ import (
 //  2. We look up the user record based on the email, and check if the
 //     password provided is the correct one for the user. If it’s not, then we
 //     send an error response.
-//  3. If the password is correct, we use our app.models.Tokens.New() method
+//  3. If the password is correct, we use our app.Models.Tokens.New() method
 //     to generate a token with an expiry time of 24 hours and the scope
 //     "authentication".
 //  4. We send this authentication token back to the client in a JSON response

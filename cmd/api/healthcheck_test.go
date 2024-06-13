@@ -8,17 +8,21 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kvnloughead/godo/internal/app"
 	"github.com/kvnloughead/godo/internal/assert"
+	"github.com/kvnloughead/godo/internal/injector"
 )
 
 func TestHealthcheck(t *testing.T) {
-	app := &application{
-		logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
-		config: app.Config{Env: "testing"},
-	}
 
-	ts := httptest.NewServer(app.routes())
+	baseApp := injector.NewApplication(
+		injector.Config{Env: "testing"},
+		slog.New(slog.NewTextHandler(io.Discard, nil)),
+		nil,
+	)
+
+	app := NewAPIApplication(baseApp)
+
+	ts := httptest.NewServer(app.Routes())
 	defer ts.Close()
 
 	rs, err := ts.Client().Get(ts.URL + "/v1/healthcheck")
