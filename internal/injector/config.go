@@ -49,6 +49,8 @@ type Config struct {
 	Cors struct {
 		TrustedOrigins []string
 	}
+
+	APIBaseURL string
 }
 
 // DatabaseConfig is a struct that stores database configuration. The DSN field
@@ -199,6 +201,9 @@ func LoadConfig() Config {
 	flag.StringVar(&cfg.SMTP.Username, "smtp-username", "", "SMTP username")
 	flag.StringVar(&cfg.SMTP.Password, "smtp-password", "", "SMTP password")
 	flag.StringVar(&cfg.SMTP.Sender, "smtp-sender", fmt.Sprintf("%s <no-reply@%s>", moduleName, modulePath), "SMTP sender")
+
+	// CLI related settings.
+	flag.StringVar(&cfg.APIBaseURL, "api-base-url", "http://localhost:4000", "Base url that API runs on")
 
 	flag.Parse()
 

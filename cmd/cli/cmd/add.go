@@ -1,35 +1,59 @@
 /*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
+Copyright © 2024 Kevin Loughead <kvnloughead@gmail.com>
 */
 package cmd
 
 import (
-	// "github.com/kvnloughead/godo/internal/data"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+
 	"github.com/spf13/cobra"
 )
 
+var title string
+
 // addCmd represents the add command
 var addCmd = &cobra.Command{
-	Use:   "add {text}",
+	Use:   "add [text]",
 	Short: "Add a new todo item with the given text.",
-	Args:  cobra.MinimumNArgs(1),
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		// text := args[0]
-		// todo := data.Todo{Title: text}
+		title := args[0]
+		payload := map[string]string{"title": title}
+		jsonPayload, err := json.Marshal(payload)
+		if err != nil {
+			app.Logger.Error("Failed to marshal JSON", err)
+			return
+		}
+
+		url := app.Config.APIBaseURL + "/v1/todos"
+		req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonPayload))
+		if err != nil {
+			app.Logger.Error("Failed to create request", err)
+			return
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			app.Logger.Error("Failed to send request", err)
+			return
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusCreated {
+			app.Logger.Error(fmt.Sprintf("Failed to add todo: %s", resp.Status))
+			return
+		}
+
+		fmt.Println("Todo added successfully")
 
 	},
 }
 
 func init() {
+
 	rootCmd.AddCommand(addCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// addCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// addCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
