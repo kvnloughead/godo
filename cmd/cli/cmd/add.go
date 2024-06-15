@@ -8,8 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
@@ -22,21 +20,9 @@ var addCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		title := args[0]
 
-		// Read the token from the file, returning an error if it isn't found.
-		homeDir, err := os.UserHomeDir()
+		token, err := app.ReadTokenFromFile()
 		if err != nil {
-			app.Logger.Error("Failed to get home directory", err)
-			return
-		}
-		tokenFile := filepath.Join(homeDir, ".config/godo", ".token")
-
-		if _, err := os.Stat(tokenFile); os.IsNotExist(err) {
-			app.Logger.Error("Token file does not exist. Please authenticate first.")
-			return
-		}
-		token, err := os.ReadFile(tokenFile)
-		if err != nil {
-			app.Logger.Error("Failed to read token file", err)
+			app.Logger.Error("Failed to read token from file", "error", err)
 			return
 		}
 
