@@ -14,7 +14,7 @@ import (
 
 // addCmd represents the add command
 var addCmd = &cobra.Command{
-	Use:   "add [text]",
+	Use:   "add <text>",
 	Short: "Add a new todo item with the given text.",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -60,6 +60,5 @@ var addCmd = &cobra.Command{
 }
 
 func init() {
-
 	rootCmd.AddCommand(addCmd)
 }
