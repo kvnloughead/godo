@@ -14,8 +14,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var title string
-
 // addCmd represents the add command
 var addCmd = &cobra.Command{
 	Use:   "add [text]",
