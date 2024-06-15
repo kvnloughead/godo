@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/kvnloughead/godo/internal/data"
 	"github.com/kvnloughead/godo/internal/injector"
 	"github.com/spf13/cobra"
 )
@@ -34,21 +33,22 @@ func Execute() {
 	}
 }
 
-var app *injector.Application
+type CLIApplication struct {
+	*injector.Application
+}
 
-func NewCLIApplication(cfg injector.Config, logger *slog.Logger) *injector.Application {
-	return &injector.Application{
-		Config: cfg,
-		Logger: logger,
-		Models: data.NewModels(nil),
-	}
+var app *CLIApplication
+
+func NewCLIApplication(app *injector.Application) *CLIApplication {
+	return &CLIApplication{Application: app}
 }
 
 func init() {
 	cfg := injector.LoadConfig()
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	app = NewCLIApplication(cfg, logger)
+	baseApp := injector.NewApplication(cfg, logger, nil)
+	app = NewCLIApplication(baseApp)
 
 	rootCmd.PersistentFlags().StringP("config", "c", "", "config file (default is $HOME/.yourcli.yaml)")
 }
