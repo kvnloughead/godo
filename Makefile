@@ -26,9 +26,8 @@ confirm:
 	@echo -n 'Are you sure? [y/N] ' && read ans && [ $${ans:-N} = y ]
 
 # ============================================================
-# DEVELOPMENT
+# API DEVELOPMENT
 # ============================================================
-
 
 ## run/api: run the cmd/api application
 .PHONY: run/api
@@ -78,3 +77,16 @@ db/migrations/clean: confirm
 	@decremented_version=$$((${version}-1)); \
 	echo "Using version $${decremented_version}"; \
 	migrate -path ./migrations -database ${DB_DSN} force $${decremented_version}
+
+# ============================================================
+# CLI INSTALLATION
+# ============================================================
+
+.PHONY: cli/build
+## cli/build builds the CLI application into a binary called 'gd'.
+cli/build:
+	go build -o gd cmd/cli/main.go
+
+## cli/install installs the CLI application 'gd' to /usr/local/bin.
+cli/install: cli/build
+	mv gd /usr/local/bin

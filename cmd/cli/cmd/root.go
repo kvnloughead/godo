@@ -14,9 +14,9 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "td [command]",
-	Short: "td is a CLI todo tracker",
-	Long: "\n" + `td is a CLI todo tracker application written in Go. It supports todo.txt syntax and is backed by an HTTP server and Postrgresql database.
+	Use:   "gd [command]",
+	Short: "gd is a CLI todo tracker",
+	Long: "\n" + `gd is a CLI todo tracker application written in Go. It supports todo.txt syntax and is backed by an HTTP server and Postrgresql database.
 	
 	TODO - add better help text.
 	`,
