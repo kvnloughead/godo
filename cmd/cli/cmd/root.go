@@ -4,10 +4,10 @@ Copyright © 2024 Kevin Loughead <kvnloughead@gmail.com>
 package cmd
 
 import (
-	"log/slog"
 	"os"
 
 	"github.com/kvnloughead/godo/internal/injector"
+	"github.com/kvnloughead/godo/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -40,7 +40,7 @@ func NewCLIApplication(app *injector.Application) *CLIApplication {
 
 func init() {
 	cfg := injector.LoadConfig()
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := logger.NewLogger()
 
 	baseApp := injector.NewApplication(cfg, logger, nil)
 	app = NewCLIApplication(baseApp)
