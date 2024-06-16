@@ -40,3 +40,17 @@ func (app *CLIApplication) ReadTokenFromFile() (string, error) {
 
 	return token, nil
 }
+
+// handleError handles CLI errors by logging the error with app.Logger.Error and
+// sending a user friendly message with fmt.Println.
+func (app *CLIApplication) handleError(logMsg, stdoutMsg string, err error) {
+	app.Logger.Error(logMsg, "error", err)
+	fmt.Println(stdoutMsg)
+}
+
+// handleAuthenticationError handles authentication related errors by calling
+// handleError with the provided arguments, along with a generic error message
+// for the user
+func (app *CLIApplication) handleAuthenticationError(logMsg string, err error) {
+	app.handleError(logMsg, "\nError: failed to authenticate. \nCheck `~/.config/godo/logs` for details.\n", err)
+}

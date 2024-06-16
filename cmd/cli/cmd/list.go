@@ -51,9 +51,11 @@ var listCmd = &cobra.Command{
 
 		token, err := app.ReadTokenFromFile()
 		if err != nil {
-			app.Logger.Error("Failed to read token from file", "error", err)
+			app.handleAuthenticationError("Failed to send request", err)
 			return
 		}
+
+		msg := "\nError: failed to list todo items. \nCheck `~/.config/godo/logs` for details.\n"
 
 		url := app.Config.APIBaseURL + "/v1/todos"
 		if pattern != "" {
@@ -61,32 +63,37 @@ var listCmd = &cobra.Command{
 		}
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
-			app.Logger.Error("Failed to create request", err)
+			app.handleError("Failed to create request", msg, err)
 			return
 		}
 		req.Header.Set("Authorization", "Bearer "+string(token))
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			app.Logger.Error("Failed to send request", err)
+			app.handleError("Failed to send request", msg, err)
 			return
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			app.Logger.Error(fmt.Sprintf("Failed to retrieve todos: %s", resp.Status), "body", resp.Body)
+			app.handleError("Failed to retrieve todos", msg, fmt.Errorf("response status: %s", resp.Status))
 			return
 		}
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			app.Logger.Error("Failed to read body", "error", err)
+			app.handleError("Failed to read body", msg, err)
 			return
 		}
 
 		var todoResponse TodoResponse
 		if err := json.Unmarshal(body, &todoResponse); err != nil {
-			app.Logger.Error("Failed to unmarshal JSON", "error", err)
+			app.handleError("Failed to unmarshal JSON", msg, err)
+			return
+		}
+
+		if len(todoResponse.Todos) == 0 {
+			fmt.Println("No matches found.")
 			return
 		}
 

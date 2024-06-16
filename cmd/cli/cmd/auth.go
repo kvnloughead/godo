@@ -40,7 +40,7 @@ var authCmd = &cobra.Command{
 		}
 		jsonPayload, err := json.Marshal(payload)
 		if err != nil {
-			app.Logger.Error("Failed to marshal JSON", err)
+			app.handleAuthenticationError("Failed to marshal JSON", err)
 			return
 		}
 
@@ -48,7 +48,7 @@ var authCmd = &cobra.Command{
 		url := app.Config.APIBaseURL + "/v1/tokens/authentication"
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonPayload))
 		if err != nil {
-			app.Logger.Error("Failed to create request", err)
+			app.handleAuthenticationError("Failed to create request", err)
 			return
 		}
 		req.Header.Set("Context-Type", "application/json")
@@ -56,20 +56,20 @@ var authCmd = &cobra.Command{
 		// Send request
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			app.Logger.Error("Failed to send request", err)
+			app.handleAuthenticationError("Failed to send request", err)
 			return
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusCreated {
-			app.Logger.Error(fmt.Sprintf("Failed to create token for %s", email))
+			app.handleAuthenticationError(fmt.Sprintf("Failed to create token for %s", email), nil)
 			return
 		}
 
 		// Read body
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			app.Logger.Error("Failed to read response body", err)
+			app.handleAuthenticationError("Failed to read response body", err)
 			return
 		}
 
@@ -77,13 +77,13 @@ var authCmd = &cobra.Command{
 		var authResp authResponse
 		err = json.Unmarshal(body, &authResp)
 		if err != nil {
-			app.Logger.Error("Failed to unmarshal error", err)
+			app.handleAuthenticationError("Failed to unmarshal", err)
 			return
 		}
 
 		// Retrieve token from response
 		if authResp.AuthenticationToken.Token == "" {
-			app.Logger.Error("Token not found in response")
+			app.handleAuthenticationError("Token not found in response", err)
 			return
 		}
 		token := authResp.AuthenticationToken.Token
@@ -91,7 +91,7 @@ var authCmd = &cobra.Command{
 		// Save token securely
 		homedir, err := os.UserHomeDir()
 		if err != nil {
-			app.Logger.Error("Failed to get home directory", err)
+			app.handleAuthenticationError("Failed to get home directory", err)
 			return
 		}
 		configDir := filepath.Join(homedir, ".config/godo")
@@ -99,7 +99,7 @@ var authCmd = &cobra.Command{
 
 		tokenFile := filepath.Join(configDir, ".token")
 		if err := os.WriteFile(tokenFile, []byte(token), 0600); err != nil {
-			app.Logger.Error("Failed to save token", err)
+			app.handleAuthenticationError("Failed to save token", err)
 			return
 		}
 		fmt.Println("Authentication successful and token saved")

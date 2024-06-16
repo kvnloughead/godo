@@ -87,6 +87,12 @@ db/migrations/clean: confirm
 cli/build:
 	go build -o gd cmd/cli/main.go
 
+.PHONY: cli/install
 ## cli/install installs the CLI application 'gd' to /usr/local/bin.
 cli/install: cli/build
 	mv gd /usr/local/bin
+
+.PHONY: cli/logs
+## cli/logs opens log files in your preferred editor
+cli/logs:
+	${EDITOR} ${HOME}/.config/godo/logs/app.log
