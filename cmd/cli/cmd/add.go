@@ -18,7 +18,7 @@ var addCmd = &cobra.Command{
 	Short: "Add a new todo item with the given text.",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		title := args[0]
+		text := args[0]
 
 		token, err := app.ReadTokenFromFile()
 		if err != nil {
@@ -28,7 +28,7 @@ var addCmd = &cobra.Command{
 
 		msg := "\nError: failed to add todo item. \nCheck `~/.config/godo/logs` for details.\n"
 
-		payload := map[string]string{"title": title}
+		payload := map[string]string{"text": text}
 		jsonPayload, err := json.Marshal(payload)
 		if err != nil {
 			app.handleError("Failed to marshal JSON", msg, err)

@@ -17,7 +17,7 @@ func (app *APIApplication) listTodos(w http.ResponseWriter, r *http.Request) {
 	// input is an anonymous struct intended to store the query params for
 	// filtering, sorting, and pagination.
 	var input struct {
-		Title    string
+		Text     string
 		Contexts []string
 		Projects []string
 
@@ -32,13 +32,13 @@ func (app *APIApplication) listTodos(w http.ResponseWriter, r *http.Request) {
 
 	// Read query params into the input struct, setting reasonable defaults if
 	// any are omitted, and validating the values that should be integers.
-	input.Title = app.readQueryString(qs, "title", "")
+	input.Text = app.readQueryString(qs, "text", "")
 	input.Contexts = app.readQueryCSV(qs, "contexts", []string{})
 	input.Projects = app.readQueryCSV(qs, "projects", []string{})
 	input.Filters.Page = app.readQueryInt(qs, "page", 1, v)
 	input.Filters.PageSize = app.readQueryInt(qs, "page_size", 20, v)
 	input.Filters.Sort = app.readQueryString(qs, "sort", "id")
-	input.Filters.SortSafelist = []string{"id", "title", "-id", "-title"}
+	input.Filters.SortSafelist = []string{"id", "text", "-id", "-text"}
 
 	if !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
@@ -52,7 +52,7 @@ func (app *APIApplication) listTodos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	todos, paginationData, err := app.Models.Todos.GetAll(
-		input.Title,
+		input.Text,
 		app.contextGetUser(r).ID,
 		input.Contexts,
 		input.Projects,
@@ -87,7 +87,7 @@ func (app *APIApplication) createTodo(w http.ResponseWriter, r *http.Request) {
 	// Struct to store the data from the response's body. The struct's fields must
 	// be exported to use it with json.NewDecoder.
 	var input struct {
-		Title     string   `json:"title"`
+		Text      string   `json:"text"`
 		Contexts  []string `json:"contexts"`
 		Projects  []string `json:"projects"`
 		Priority  string   `json:"priority"`
@@ -101,7 +101,7 @@ func (app *APIApplication) createTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	todo := &data.Todo{
-		Title:     input.Title,
+		Text:      input.Text,
 		UserID:    app.contextGetUser(r).ID,
 		Contexts:  input.Contexts,
 		Projects:  input.Projects,
@@ -197,7 +197,7 @@ func (app *APIApplication) updateTodo(w http.ResponseWriter, r *http.Request) {
 	// pointers to facilitate partial updates. If a value is not provided, the
 	// pointer will be nil, and we can leave the corresponding field unchanged.
 	var input struct {
-		Title     *string   `json:"title"`
+		Text      *string   `json:"text"`
 		Contexts  *[]string `json:"contexts"`
 		Projects  *[]string `json:"projects"`
 		Priority  *string   `json:"priority"`
@@ -212,8 +212,8 @@ func (app *APIApplication) updateTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If the input field isn't nil, update the corresponding field in the record.
-	if input.Title != nil {
-		todo.Title = *input.Title
+	if input.Text != nil {
+		todo.Text = *input.Text
 	}
 	if input.Contexts != nil {
 		todo.Contexts = *input.Contexts

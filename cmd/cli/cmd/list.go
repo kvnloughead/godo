@@ -24,7 +24,7 @@ type Todo struct {
 	ID        int    `json:"id"`
 	UserID    int    `json:"user_id"`
 	CreatedAt string `json:"created_at"`
-	Title     string `json:"title"`
+	Text      string `json:"text"`
 	Priority  string `json:"priority"`
 	Completed bool   `json:"completed"`
 	Version   int    `json:"version"`
@@ -59,7 +59,7 @@ var listCmd = &cobra.Command{
 
 		url := app.Config.APIBaseURL + "/v1/todos"
 		if pattern != "" {
-			url = url + "?title=" + pattern
+			url = url + "?text=" + pattern
 		}
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
@@ -98,7 +98,7 @@ var listCmd = &cobra.Command{
 		}
 
 		for _, todo := range todoResponse.Todos {
-			fmt.Println(todo.Title)
+			fmt.Println(todo.Text)
 		}
 	},
 }
