@@ -18,7 +18,7 @@ type Todo struct {
 	ID        int64     `json:"id"`
 	UserID    int64     `json:"user_id"`
 	CreatedAt time.Time `json:"created_at"`
-	Title     string    `json:"title"`
+	Text      string    `json:"text"`
 	Contexts  []string  `json:"contexts,omitempty"`
 	Projects  []string  `json:"projects,omitempty"`
 	Priority  string    `json:"priority"`
@@ -47,7 +47,7 @@ type TodoModel struct {
 // GetAll retrieves a slice of todos from the database. The slice can be
 // filtered, sorted, and paginated via several optional query parameters.
 //
-//   - title: if provided, fuzzy matches on the todo's title.
+//   - text: if provided, fuzzy matches on the todo's text.
 //   - contexts: if provided, only todos that have each of the provided contexts
 //     are included.
 //   - projects: if provided, only todos that have each of the provided projects
@@ -58,15 +58,15 @@ type TodoModel struct {
 //   - page: the page number to return.
 //
 // Pagination metadata is returned in the response, unless no records are found.
-func (m TodoModel) GetAll(title string, userID int64, contexts []string, projects []string, filters Filters) ([]*Todo, PaginationData, error) {
+func (m TodoModel) GetAll(text string, userID int64, contexts []string, projects []string, filters Filters) ([]*Todo, PaginationData, error) {
 	// We are using fmt.Sprintf to interpolate column names, since it is not
 	// possible to do that with postgresql placeholders.
 	query := fmt.Sprintf(`
 		SELECT 
 			count(*) OVER(),
-			id, created_at, title, contexts, projects, priority, completed, version
+			id, created_at, text, contexts, projects, priority, completed, version
 		FROM todos
-		WHERE (to_tsvector('english', title)
+		WHERE (to_tsvector('english', text)
 					 @@ plainto_tsquery('english', $1) OR $1 = '')
 		AND (contexts @> $2 OR $2 = '{}')
 		AND (projects @> $3 OR $3 = '{}')
@@ -78,7 +78,7 @@ func (m TodoModel) GetAll(title string, userID int64, contexts []string, project
 	defer cancel()
 
 	// Retrieve matching rows from database.
-	args := []any{title, pq.Array(contexts), pq.Array(projects), userID, filters.limit(), filters.offset()}
+	args := []any{text, pq.Array(contexts), pq.Array(projects), userID, filters.limit(), filters.offset()}
 	rows, err := m.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, PaginationData{}, err
@@ -97,7 +97,7 @@ func (m TodoModel) GetAll(title string, userID int64, contexts []string, project
 			&totalRecords,
 			&m.ID,
 			&m.CreatedAt,
-			&m.Title,
+			&m.Text,
 			pq.Array(&m.Contexts),
 			pq.Array(&m.Projects),
 			&m.Priority,
@@ -127,7 +127,7 @@ func (m TodoModel) Insert(todo *Todo) error {
 	// The query returns the system-generated id, created_at, and version fields
 	// so that we can assign them to the todo struct argument.
 	query := `
-		INSERT INTO todos (title, user_id, contexts, projects, priority, completed)
+		INSERT INTO todos (text, user_id, contexts, projects, priority, completed)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id, created_at, version`
 
@@ -136,7 +136,7 @@ func (m TodoModel) Insert(todo *Todo) error {
 	// The args slice contains the fields provided in the todo struct arguement.
 	// Note that we are converting the string slice todo.Contexts to an array the
 	// is compatible with the contexts field's text[] type.
-	args := []any{todo.Title, todo.UserID, pq.Array(todo.Contexts), pq.Array(todo.Projects), todo.Priority, todo.Completed}
+	args := []any{todo.Text, todo.UserID, pq.Array(todo.Contexts), pq.Array(todo.Projects), todo.Priority, todo.Completed}
 
 	ctx, cancel := CreateTimeoutContext(QueryTimeout)
 	defer cancel()
@@ -159,7 +159,7 @@ func (m TodoModel) GetTodoIfOwned(id, userID int64) (*Todo, error) {
 	}
 
 	query := `
-		SELECT id, user_id, created_at, title, contexts, projects, priority, completed, version
+		SELECT id, user_id, created_at, text, contexts, projects, priority, completed, version
 		FROM todos WHERE ID = $1 AND user_id = $2`
 
 	var todo Todo
@@ -171,7 +171,7 @@ func (m TodoModel) GetTodoIfOwned(id, userID int64) (*Todo, error) {
 		&todo.ID,
 		&todo.UserID,
 		&todo.CreatedAt,
-		&todo.Title,
+		&todo.Text,
 		pq.Array(&todo.Contexts),
 		pq.Array(&todo.Projects),
 		&todo.Priority,
@@ -201,12 +201,12 @@ func (m TodoModel) GetTodoIfOwned(id, userID int64) (*Todo, error) {
 func (m TodoModel) Update(todo *Todo) error {
 	query := `
 		UPDATE todos
-		SET title = $1, contexts = $2, projects = $3, priority = $4, completed = $5, version = version + 1
+		SET text = $1, contexts = $2, projects = $3, priority = $4, completed = $5, version = version + 1
 		WHERE id = $6 AND version = $7
 		RETURNING version`
 
 	args := []any{
-		todo.Title,
+		todo.Text,
 		pq.Array(todo.Contexts),
 		pq.Array(todo.Projects),
 		todo.Priority,
@@ -266,9 +266,9 @@ func (m TodoModel) Delete(id int64) error {
 // ValidateTodo validates the fields of a Todo struct. The fields must meet
 // the following requirements:
 //
-//   - Title is the only required field. It contains the full text of the todo.
+//   - Text is the only required field. It contains the full text of the todo.
 //
-//   - Title must be less than 500 bytes.
+//   - Text must be less than 500 bytes.
 //
 //   - There can be between 0 and 5 unique, string-valued contexts.
 //
@@ -278,8 +278,8 @@ func (m TodoModel) Delete(id int64) error {
 //     string.
 func ValidateTodo(v *validator.Validator, t *Todo) {
 
-	v.Check(t.Title != "", "title", "must be provided")
-	v.Check(len(t.Title) < 500, "title", "must be less than 500 bytes")
+	v.Check(t.Text != "", "text", "must be provided")
+	v.Check(len(t.Text) < 500, "text", "must be less than 500 bytes")
 
 	v.Check(len(t.Contexts) <= 5, "contexts", "must be no more than 5 contexts")
 	v.Check(validator.Unique(t.Contexts), "contexts", "must not contain duplicate values")

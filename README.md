@@ -138,11 +138,11 @@ curl -H "Authorization: Bearer EZVNRJHUXXXXXXZQGKTXIWDDFQ" localhost:4000/v1/tod
 
 ### POST /v1/todos
 
-Add a new todo to the table. The request body must contain a title field with stores the text of the todo item. This is the only required field.
+Add a new todo to the table. The request body must contain a text field with stores the text of the todo item. This is the only required field.
 
 ```bash
 # Example usage
-curl -X POST -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" -d '{ "title": "(A) do something important @readme +godo" }' localhost:4000/v1/todos
+curl -X POST -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" -d '{ "text": "(A) do something important @readme +godo" }' localhost:4000/v1/todos
 
 ```
 
@@ -153,7 +153,7 @@ curl -X POST -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" -d '{ "title"
     "id": 1,
     "user_id": 1,
     "created_at": "2024-05-27T17:44:39-04:00",
-    "title": "(A) do something important @readme +godo",
+    "text": "(A) do something important @readme +godo",
     "priority": 0,
     "completed": false,
     "version": 1
