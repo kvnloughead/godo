@@ -43,3 +43,32 @@ func IsNil(t *testing.T, actual error) {
 		t.Errorf("got %q; expected: nil", actual)
 	}
 }
+
+// SliceEqual returns true if the actual and expected slice arguments contain
+// the same elements.
+func SlicesAreEqual[T comparable](t *testing.T, a []T, b []T) bool {
+	t.Helper()
+
+	if len(a) != len(b) {
+		t.Errorf("slices have different lengths: %d and %d", len(a), len(b))
+	}
+
+	countA := make(map[T]int)
+	countB := make(map[T]int)
+
+	for _, v := range a {
+		countA[v]++
+	}
+
+	for _, v := range b {
+		countB[v]++
+	}
+
+	for key, count := range countA {
+		if countB[key] != count {
+			return false
+		}
+	}
+
+	return true
+}
