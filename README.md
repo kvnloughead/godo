@@ -7,6 +7,8 @@ A todo tracking application written in Go. Features will eventually include:
 3. Todos stored in Postgresql.
 4. A convenient command line interface for writing and viewing todos, utilizing a [todo.txt](https://github.com/todotxt/todo.txt) style syntax.
 
+See [SETUP.md](./SETUP.md) for a quickstart guide.
+
 ## Endpoints that don't require authentication
 
 Usage example s assume you are running the app locally with either `make run/api` or `make run/air`. The API is currently not deployed.

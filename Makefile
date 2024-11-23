@@ -32,7 +32,7 @@ confirm:
 ## run/api: run the cmd/api application
 .PHONY: run/api
 run/api:
-	@go run ./cmd/api $(FLAGS)
+	@go run ./cmd/api -db-dsn=${DB_DSN} $(FLAGS)
 
 # Requires global installation: `go install github.com/cosmtrek/ air@latest`  
 # and the appropriate environmental variables. 
@@ -40,6 +40,50 @@ run/api:
 .PHONY: run/air
 run/air:
 	air -- $(FLAGS)
+
+# ============================================================
+# DATABASE SETUP (once per environment)
+# ============================================================
+
+## db/setup: create database and user with appropriate permissions
+.PHONY: db/setup
+db/setup: confirm
+	@echo 'Creating database and user...'
+	@echo "Copying setup file to temporary location..."
+	@sudo cp db/init/setup.sql /tmp/db_setup.sql
+	@echo "Setting permissions..."
+	@sudo chown postgres:postgres /tmp/db_setup.sql
+	@echo "Running setup script..."
+	cd /tmp && sudo -u postgres psql \
+		-v db_name=$(DB_NAME) \
+		-v db_user=$(DB_USER) \
+		-v db_password=$(DB_PASSWORD) \
+		-v ON_ERROR_STOP=1 \
+		-f /tmp/db_setup.sql
+	@echo "Cleaning up..."
+	@sudo rm /tmp/db_setup.sql
+	@echo 'Database setup complete.'
+
+# ============================================================
+# DATABASE MANAGEMENT
+# ============================================================
+
+## db/drop: drop database and user (destructive!)
+.PHONY: db/drop
+db/drop: confirm
+	@echo 'Dropping database and user...'
+	@sudo cp db/scripts/drop.sql /tmp/db_drop.sql
+	@echo "Setting permissions..."
+	@sudo chown postgres:postgres /tmp/db_drop.sql
+	@echo "Running drop script..."
+	@cd /tmp && sudo -u postgres psql \
+		-v db_name=$(DB_NAME) \
+		-v db_user=$(DB_USER) \
+		-v ON_ERROR_STOP=1 \
+		-f /tmp/db_drop.sql
+	@echo "Cleaning up..."
+	@sudo rm /tmp/db_drop.sql
+	@echo 'Database and user dropped.'
 
 ## db/psql: connect the the database using psql
 .PHONY: db/psql
@@ -50,25 +94,25 @@ db/psql:
 .PHONY: db/migrations/new
 db/migrations/new:
 	@echo 'Creating migration files for ${name}'
-	migrate create -seq -ext=.sql -dir=./migrations ${name}
+	migrate create -seq -ext=.sql -dir=./db/migrations ${name}
 
 ## db/migrations/up: apply all 'up' migrations
 .PHONY: db/migrations/up
 db/migrations/up: confirm
 	@echo 'Running all up migrations'
-	migrate -path ./migrations -database ${DB_DSN} up
+	migrate -path ./db/migrations -database ${DB_DSN} up
 
 ## db/migrations/down: apply all 'down' migrations
 .PHONY: db/migrations/down
 db/migrations/down: confirm
 	@echo 'Running all down migrations'
-	migrate -path ./migrations -database ${DB_DSN} down
+	migrate -path ./db/migrations -database ${DB_DSN} down
 
 ## db/migrations/goto version=$1: goto specific migration version
 .PHONY: db/migrations/goto
 db/migrations/goto: confirm
 	@echo 'Migrating to version ${version}'
-	migrate -path ./migrations -database ${DB_DSN} goto ${version}
+	migrate -path ./db/migrations -database ${DB_DSN} goto ${version}
 
 ## db/migrations/clean version=$1: Intended to clean dirty DB.  Specify the dirty version number, and it will be decremented and passed as an argument to force
 .PHONY: db/migrations/clean
@@ -76,7 +120,7 @@ db/migrations/clean: confirm
 	@echo 'Cleaning DB (dirty version ${version})'
 	@decremented_version=$$((${version}-1)); \
 	echo "Using version $${decremented_version}"; \
-	migrate -path ./migrations -database ${DB_DSN} force $${decremented_version}
+	migrate -path ./db/migrations -database ${DB_DSN} force $${decremented_version}
 
 # ============================================================
 # CLI INSTALLATION
