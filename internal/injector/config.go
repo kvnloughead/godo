@@ -167,61 +167,74 @@ func getModulePathAndName() (string, string, error) {
 //
 // Configuration is loaded in the following order:
 //
-// 1. Default values
-// 2. Environment variables (including .env file in development)
-// 3. Command line flags (these take highest precedence)
+//  1. Default values
+//
+//  2. Environment variables (including .env file in development)
+//
+//  3. Command line flags (these take highest precedence)
 //
 // The -db-dsn flag must be provided either as an environmental variable or
 // flag, as it has no default value.
+//
+// In production, we need the ENV variable to be set before the flags are
+// parsed, so set it to production in the [Service] section of the systemd
+// service file:
+//
+//	````ini
+//	 [Service]
+//	 Environment=ENV=production
+//	````
 func LoadConfig() Config {
-	env := os.Getenv("ENV")
 	var modulePath, moduleName string
-
-	// Only load .env file and get module info in non-production environments
-	if env != "production" {
-		err := godotenv.Load()
-		if err != nil {
-			log.Print("Error loading .env file:", err)
-		}
-
-		modulePath, moduleName, err = getModulePathAndName()
-		if err != nil {
-			log.Print("Error getting Go module path and name:", err)
-		}
-	}
-
 	var cfg Config
 
+	// Define ALL flags first
+	flag.StringVar(&cfg.Env, "env", "development", "Environment (development|staging|production)")
 	flag.IntVar(&cfg.Port, "port", 4000, "The port to run the app on.")
-	flag.StringVar(&cfg.Env,
-		"env",
-		"development",
-		"Environment (development|staging|production)")
 	flag.Var(&cfg.Debug, "debug", "Run in debug mode")
 	flag.Var(&cfg.Verbose, "verbose", "Provide verbose logging")
 
-	// Read DB-related settings from CLI flags.
+	// DB flags
 	flag.StringVar(&cfg.DB.DSN, "db-dsn", "", "Postgresql DSN")
 	flag.IntVar(&cfg.DB.MaxOpenConns, "db-max-open-conns", 25, "Postgresql max open connections")
 	flag.IntVar(&cfg.DB.MaxIdleConns, "db-max-idle-conns", 25, "Postgresql max idle connections")
 	flag.DurationVar(&cfg.DB.MaxIdleTime, "db-max-idle-time", 15*time.Minute, "Postgresql max connection idle time")
 
-	// Read SMTP related settings from CLI flags. The defaults are derived from
-	// the Mailtrap server we are using for testing.
+	// SMTP flags
 	flag.StringVar(&cfg.SMTP.Host, "smtp-host", "sandbox.smtp.mailtrap.io", "SMTP host")
 	flag.IntVar(&cfg.SMTP.Port, "smtp-port", 25, "SMTP server port")
 	flag.StringVar(&cfg.SMTP.Username, "smtp-username", "", "SMTP username")
 	flag.StringVar(&cfg.SMTP.Password, "smtp-password", "", "SMTP password")
+	flag.StringVar(&cfg.APIBaseURL, "api-base-url", "http://localhost:4000", "Base url that API runs on")
 
-	if env != "production" {
-		flag.StringVar(&cfg.SMTP.Sender, "smtp-sender", fmt.Sprintf("%s <no-reply@%s>", moduleName, modulePath), "SMTP sender")
-	} else {
-		flag.StringVar(&cfg.SMTP.Sender, "smtp-sender", fmt.Sprintf("%s <no-reply@%s>", moduleName, modulePath), "SMTP sender")
-		// CLI related settings.
-		flag.StringVar(&cfg.APIBaseURL, "api-base-url", "http://localhost:4000", "Base url that API runs on")
+	// Parse flags once
+	flag.Parse()
+
+	// Load appropriate .env file
+	envFile := ".env.local"
+	if cfg.Env == "production" {
+		envFile = ".env.production"
 	}
 
-	flag.Parse()
+	// Only load .env file and get module info in non-production environments
+	if cfg.Env != "production" {
+		log.Printf("Loading .env file: %s", envFile)
+
+		if err := godotenv.Load(envFile); err != nil {
+			log.Printf("Error loading %s: %v", envFile, err)
+		}
+
+		var err error
+		modulePath, moduleName, err = getModulePathAndName()
+		if err != nil {
+			log.Printf("Error getting Go module path and name: %v", err)
+		}
+	}
+
+	// Set SMTP sender based on environment
+	if cfg.Env != "production" {
+		cfg.SMTP.Sender = fmt.Sprintf("%s <no-reply@%s>", moduleName, modulePath)
+	}
 
 	// Load settings that don't have defaults provided. Suitable values must be
 	// provided as either flags or environmental variables.
