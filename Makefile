@@ -122,6 +122,43 @@ db/migrations/clean: confirm
 	echo "Using version $${decremented_version}"; \
 	migrate -path ./db/migrations -database ${DB_DSN} force $${decremented_version}
 
+
+# ============================================================
+# BUILD MANAGEMENT
+# ============================================================
+
+## build: build for current OS/architecture in ./build/release
+.PHONY: build
+build:
+	@echo 'Building for current OS/architecture...'
+	@mkdir -p build/release
+	@go build -o build/release/godo ./cmd/api
+
+## build/linux: build for Linux amd64 (for GCP deployment)
+.PHONY: build/linux
+build/linux:
+	@echo 'Building for Linux amd64...'
+	@mkdir -p build/linux/amd64
+	@GOOS=linux GOARCH=amd64 go build -v -o build/linux/amd64/godo ./cmd/api
+	@echo 'Build complete: build/linux/amd64/godo'
+
+## build/clean: remove build directory
+.PHONY: build/clean
+build/clean: confirm
+	@echo 'Removing build directory...'
+	@rm -rf build/
+
+# ============================================================
+# DEPLOYMENT MANAGEMENT
+# ============================================================
+
+## deploy/gcp: deploy to GCP
+.PHONY: deploy/gcp
+deploy/gcp: build/linux
+	@echo 'Deploying to GCP...'
+	@scp build/linux/amd64/godo ${GCP_USER}@${GCP_HOST}:/opt/godo/
+
+
 # ============================================================
 # CLI INSTALLATION
 # ============================================================
