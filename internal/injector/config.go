@@ -160,22 +160,34 @@ func getModulePathAndName() (string, string, error) {
 }
 
 // LoadConfig loads the configuration, returning the resulting Config struct.
-// It first loads environmental variables from the environment, including from
-// a .env file. Then, if any command line flags have been set, these will
-// override the evironmental variables.
+// In development mode, it loads from .env file and detects Go module
+// information.
 //
-// Reasonable defaults have been provided in most cases. The exception is the
-// -db-dsn flag, which defaults to an empty string. This must be provided as
-// an environmental variable or flag.
+// In production, it skips .env loading and module detection.
+//
+// Configuration is loaded in the following order:
+//
+// 1. Default values
+// 2. Environment variables (including .env file in development)
+// 3. Command line flags (these take highest precedence)
+//
+// The -db-dsn flag must be provided either as an environmental variable or
+// flag, as it has no default value.
 func LoadConfig() Config {
-	err := godotenv.Load()
-	if err != nil {
-		log.Print("Error loading .env file:", err)
-	}
+	env := os.Getenv("ENV")
+	var modulePath, moduleName string
 
-	modulePath, moduleName, err := getModulePathAndName()
-	if err != nil {
-		log.Print("Error loading .env file:", err)
+	// Only load .env file and get module info in non-production environments
+	if env != "production" {
+		err := godotenv.Load()
+		if err != nil {
+			log.Print("Error loading .env file:", err)
+		}
+
+		modulePath, moduleName, err = getModulePathAndName()
+		if err != nil {
+			log.Print("Error getting Go module path and name:", err)
+		}
 	}
 
 	var cfg Config
@@ -200,10 +212,14 @@ func LoadConfig() Config {
 	flag.IntVar(&cfg.SMTP.Port, "smtp-port", 25, "SMTP server port")
 	flag.StringVar(&cfg.SMTP.Username, "smtp-username", "", "SMTP username")
 	flag.StringVar(&cfg.SMTP.Password, "smtp-password", "", "SMTP password")
-	flag.StringVar(&cfg.SMTP.Sender, "smtp-sender", fmt.Sprintf("%s <no-reply@%s>", moduleName, modulePath), "SMTP sender")
 
-	// CLI related settings.
-	flag.StringVar(&cfg.APIBaseURL, "api-base-url", "http://localhost:4000", "Base url that API runs on")
+	if env != "production" {
+		flag.StringVar(&cfg.SMTP.Sender, "smtp-sender", fmt.Sprintf("%s <no-reply@%s>", moduleName, modulePath), "SMTP sender")
+	} else {
+		flag.StringVar(&cfg.SMTP.Sender, "smtp-sender", fmt.Sprintf("%s <no-reply@%s>", moduleName, modulePath), "SMTP sender")
+		// CLI related settings.
+		flag.StringVar(&cfg.APIBaseURL, "api-base-url", "http://localhost:4000", "Base url that API runs on")
+	}
 
 	flag.Parse()
 
