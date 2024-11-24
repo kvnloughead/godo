@@ -138,9 +138,9 @@ build:
 .PHONY: build/linux
 build/linux:
 	@echo 'Building for Linux amd64...'
-	@mkdir -p build/linux/amd64
-	@GOOS=linux GOARCH=amd64 go build -v -o build/linux/amd64/godo ./cmd/api
-	@echo 'Build complete: build/linux/amd64/godo'
+	@mkdir -p build/release
+	@GOOS=linux GOARCH=amd64 go build -v -o build/release/godo-linux-amd64 ./cmd/api
+	@echo 'Build complete: build/release/godo-linux-amd64'
 
 ## build/clean: remove build directory
 .PHONY: build/clean
@@ -152,12 +152,14 @@ build/clean: confirm
 # DEPLOYMENT MANAGEMENT
 # ============================================================
 
-## deploy/gcp: deploy to GCP
+## deploy/gcp: stop deployed service, deploy binary, start service again
 .PHONY: deploy/gcp
 deploy/gcp: build/linux
 	@echo 'Deploying to GCP...'
-	@scp build/linux/amd64/godo ${GCP_USER}@${GCP_HOST}:/opt/godo/
-
+	@ssh ${GCP_USER}@${GCP_HOST} "sudo systemctl stop godo"
+	@scp build/release/godo-linux-amd64 ${GCP_USER}@${GCP_HOST}:/opt/godo/
+	@ssh ${GCP_USER}@${GCP_HOST} "sudo systemctl start godo"
+	@echo 'Deployment complete.'
 
 # ============================================================
 # CLI INSTALLATION
