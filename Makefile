@@ -1,4 +1,15 @@
-include .env
+ifdef ENV
+	ifeq ($(ENV), production)
+		include .env.production
+		PGHOST=34.134.133.227
+	else
+		include .env.local
+		PGHOST=localhost
+	endif
+else
+	include .env.local
+	PGHOST=localhost
+endif
 
 # ============================================================
 # HELPERS
@@ -49,19 +60,13 @@ run/air:
 .PHONY: db/setup
 db/setup: confirm
 	@echo 'Creating database and user...'
-	@echo "Copying setup file to temporary location..."
-	@sudo cp db/init/setup.sql /tmp/db_setup.sql
-	@echo "Setting permissions..."
-	@sudo chown postgres:postgres /tmp/db_setup.sql
 	@echo "Running setup script..."
-	cd /tmp && sudo -u postgres psql \
+	PGHOST=$(PGHOST) psql -U postgres \
 		-v db_name=$(DB_NAME) \
 		-v db_user=$(DB_USER) \
-		-v db_password=$(DB_PASSWORD) \
+		-v db_password='$(DB_PASSWORD)' \
 		-v ON_ERROR_STOP=1 \
-		-f /tmp/db_setup.sql
-	@echo "Cleaning up..."
-	@sudo rm /tmp/db_setup.sql
+		-f db/init/setup.sql
 	@echo 'Database setup complete.'
 
 # ============================================================
