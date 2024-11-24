@@ -1,4 +1,4 @@
--- Set script for creating database and user. Run once per environment.
+--- Script for creating database and user. Run once per environment.
 
 -- Create database if it doesn't exist
 SELECT 'CREATE DATABASE ' || :'db_name'
