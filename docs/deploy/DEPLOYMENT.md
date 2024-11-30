@@ -1,26 +1,22 @@
-# Deployment Guide
+# Deploying Godo
 
-## Server Setup
+## Prerequisites
 
-1. Install Go:
+Your server needs:
 
-   ```bash
-   wget https://go.dev/dl/go1.21.6.linux-amd64.tar.gz
-   sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.21.6.linux-amd64.tar.gz
+- Ubuntu 22.04 or later
+- PostgreSQL 14 or later
+- Open ports:
+  - 4000 (API)
+  - 5432 (PostgreSQL)
+- Systemd for service management
+- User with sudo privileges
 
-   # Add Go to PATH
-   echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
-   source ~/.bashrc
-   ```
+See [PREREQUISITES.md](PREREQUISITES.md) for more details.
 
-2. Install and configure PostgreSQL:
+## Database Setup
 
-   ```bash
-   sudo apt update
-   sudo apt install postgresql postgresql-contrib
-   ```
-
-3. Configure PostgreSQL for remote connections:
+1. Configure PostgreSQL for remote connections:
 
    Edit postgresql.conf:
 
@@ -40,7 +36,7 @@
    sudo nano /etc/postgresql/*/main/pg_hba.conf
    ```
 
-   Comment out the line:
+   Comment out:
 
    ```
    # local   all             postgres                                peer
@@ -55,10 +51,11 @@
    host    all             postgres        ::1/128                 trust
 
    # Allow remote connections from your development machine
-   host    godo_db         godo_user        YOUR_LOCAL_IP/32        scram-sha-256
+   host    godo_db         godo_user        YOUR_IP/32              scram-sha-256
    ```
 
-4. Restart PostgreSQL:
+   Restart PostgreSQL:
+
    ```bash
    sudo systemctl restart postgresql
    ```
@@ -72,13 +69,7 @@
    sudo chown $USER:$USER /opt/godo
    ```
 
-2. Copy binary to server:
-
-   ```bash
-   scp build/godo-linux-amd64 your_server:/opt/godo/
-   ```
-
-3. Create systemd service:
+2. Create systemd service:
 
    ```bash
    sudo nano /etc/systemd/system/godo.service
@@ -94,13 +85,13 @@
    [Service]
    Type=simple
    Environment=ENV=production
-   User=kevin
-   Group=kevin
+   User=$USER
+   Group=$USER
    WorkingDirectory=/opt/godo
    ExecStart=/opt/godo/godo-linux-amd64 \
        -port=4000 \
        -env=production \
-       -db-dsn="postgresql://godo_user:your_secure_password@localhost/godo_db?sslmode=disable"
+       -db-dsn="postgresql://godo_user:your_password@localhost/godo_db?sslmode=disable"
 
    Restart=always
    RestartSec=5
@@ -109,16 +100,14 @@
    WantedBy=multi-user.target
    ```
 
-## Database Management
+## Local Development Setup
 
-All database operations are performed from your local development machine. The server only needs PostgreSQL configured to accept remote connections.
-
-1. Create `.env.production` on your local machine:
+1. Create `.env.production`:
 
    ```env
    DB_NAME=godo_db
    DB_USER=godo_user
-   DB_PASSWORD=your_secure_password
+   DB_PASSWORD=your_password
    DB_HOST=your_server_ip
    DB_PORT=5432
    DB_DSN=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable
@@ -133,22 +122,20 @@ All database operations are performed from your local development machine. The s
    # Run migrations
    ENV=production make db/migrations/up
 
-   # Verify connection
-   ENV=production make db/psql
+   # Deploy binary
+   make deploy/gcp
    ```
 
 ## Service Management
 
 ```bash
-# Start the service
-sudo systemctl start godo
+# Start and enable service
+sudo systemctl enable --now godo
 
-# Enable service on boot
-sudo systemctl enable godo
-
-# Check service status
+# Check status
 sudo systemctl status godo
 
 # View logs
-sudo journalctl -u godo -f
+sudo journalctl -u godo -n 100  # Last 100 lines
+sudo journalctl -u godo -f &    # Follow in background
 ```
