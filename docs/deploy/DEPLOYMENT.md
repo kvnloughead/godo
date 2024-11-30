@@ -136,6 +136,96 @@ sudo systemctl enable --now godo
 sudo systemctl status godo
 
 # View logs
-sudo journalctl -u godo -n 100  # Last 100 lines
+sudo journalctl -u godo -n 100 --reverse # Last 100 lines
 sudo journalctl -u godo -f &    # Follow in background
+sudo journalctl -u godo -f    # Follow in foreground
 ```
+
+## Domain Setup
+
+1. Install Nginx:
+
+```bash
+sudo apt update
+sudo apt install nginx
+```
+
+2. Create Nginx configuration:
+
+```bash
+sudo nano /etc/nginx/sites-available/godo
+```
+
+Add:
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location / {
+        # Forward requests to your Go API running on port 4000
+        proxy_pass http://localhost:4000;
+
+        # Preserve the original host, port, and protocol headers from the client
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Preserve the original client IP, even if behind another proxy.
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # Timeouts
+        proxy_connect_timeout 10s;
+        proxy_send_timeout 15s;
+        proxy_read_timeout 60s;
+    }
+}
+```
+
+3. Enable the site:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/godo /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+4. Install certbot for SSL:
+
+Follow the instructions [here](https://certbot.eff.org) for NGINX and Linux
+(snap). Then run:
+
+```bash
+# Prepare certbot command
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+
+# Run certbot and follow the instructions
+sudo certbot --nginx
+```
+
+5. Update firewall rules:
+
+```bash
+# Allow HTTP/HTTPS
+gcloud compute firewall-rules create allow-web \
+    --direction=INGRESS \
+    --network=default \
+    --action=ALLOW \
+    --rules=tcp:80,tcp:443 \
+    --source-ranges=0.0.0.0/0
+```
+
+6. Configure Network Tags
+
+Your VM instance needs the correct network tags to allow HTTP traffic:
+
+```bash
+# Add http-server tag to allow HTTP traffic
+gcloud compute instances add-tags YOUR_INSTANCE_NAME \
+    --tags=http-server \
+    --zone=YOUR_ZONE
+```
+
+The `http-server` tag is required for the default HTTP firewall rule to take effect.

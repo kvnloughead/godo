@@ -1,5 +1,10 @@
 # TODO
 
+## Deployment
+
+- Fix activation emails
+- Simplify the process for creating a new user (CLI command(s))
+
 ## GET /v1/todos
 
 - verify that all sort, filter, pagination options work

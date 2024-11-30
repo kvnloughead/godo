@@ -187,12 +187,12 @@ endif
 .PHONY: cli/build
 ## cli/build builds the CLI application into a binary called 'gd'.
 cli/build:
-	go build -o gd cmd/cli/main.go
+	go build -o godo cmd/cli/main.go
 
 .PHONY: cli/install
 ## cli/install installs the CLI application 'gd' to /usr/local/bin.
 cli/install: cli/build
-	mv gd /usr/local/bin
+	mv godo /usr/local/bin
 
 .PHONY: cli/logs
 ## cli/logs opens log files in your preferred editor
