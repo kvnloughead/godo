@@ -157,6 +157,9 @@ build/clean: confirm
 # DEPLOYMENT MANAGEMENT
 # ============================================================
 
+# Deployment targets
+.PHONY: deploy/ssh deploy/copy deploy/gcp
+
 ## deploy/gcp: stop deployed service, deploy binary, start service again
 .PHONY: deploy/gcp
 deploy/gcp: build/linux
@@ -165,6 +168,17 @@ deploy/gcp: build/linux
 	@scp build/release/godo-linux-amd64 ${GCP_USER}@${GCP_HOST}:/opt/godo/
 	@ssh ${GCP_USER}@${GCP_HOST} "sudo systemctl start godo"
 	@echo 'Deployment complete.'
+
+## deploy/ssh: SSH into the GCP instance
+deploy/ssh:
+	ssh ${GCP_USER}@${GCP_HOST}
+
+## deploy/copy: Copy file to GCP instance. Usage: make deploy/copy FILE=path/to/file
+deploy/copy:
+ifndef FILE
+	$(error FILE is not set. Usage: make deploy/copy FILE=path/to/file)
+endif
+	scp ${FILE} ${GCP_USER}@${GCP_HOST}:/opt/godo/
 
 # ============================================================
 # CLI INSTALLATION
