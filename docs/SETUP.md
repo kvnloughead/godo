@@ -7,6 +7,12 @@
    ```bash
    go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
    ```
+3. Install `air`:
+   This enables the `make run/air` target to automatically restart the API
+   server when code changes are detected.
+   ```bash
+   go install github.com/air-verse/air@latest
+   ```
 
 ## Local Development Setup
 
