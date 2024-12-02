@@ -6,3 +6,6 @@ bin/
 tmp
 
 build/
+
+# godo binary for development
+godo
