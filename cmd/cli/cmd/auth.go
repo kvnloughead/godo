@@ -59,14 +59,15 @@ var authCmd = &cobra.Command{
 			app.handleAuthenticationError("Failed to send request", err)
 			return
 		}
-		defer resp.Body.Close()
 
+		// Handle response
+		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusCreated {
 			app.handleAuthenticationError(fmt.Sprintf("Failed to create token for %s", email), nil)
 			return
 		}
 
-		// Read body
+		// Read response body
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			app.handleAuthenticationError("Failed to read response body", err)
@@ -77,7 +78,7 @@ var authCmd = &cobra.Command{
 		var authResp authResponse
 		err = json.Unmarshal(body, &authResp)
 		if err != nil {
-			app.handleAuthenticationError("Failed to unmarshal", err)
+			app.handleAuthenticationError("Failed to unmarshal response", err)
 			return
 		}
 
