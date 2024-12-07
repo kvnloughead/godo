@@ -35,7 +35,21 @@
    DB_PORT=5432
    DB_DSN=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable
    EDITOR=vim
+
+   # Mailtrap SMTP settings (for development email testing)
+   SMTP_HOST=sandbox.smtp.mailtrap.io
+   SMTP_PORT=2525
+   SMTP_USERNAME=your_mailtrap_username    # From Mailtrap SMTP Settings
+   SMTP_PASSWORD=your_mailtrap_password    # From Mailtrap SMTP Settings
+   SMTP_SENDER="Godo <no-reply@godo.example.com>"
    ```
+
+   To get your Mailtrap credentials:
+
+   1. Create a free account at [Mailtrap.io](https://mailtrap.io)
+   2. Go to Email Testing → Inboxes
+   3. Click on your inbox
+   4. Find the SMTP credentials in the "SMTP Settings" section
 
 3. Setup database and run migrations:
    ```bash
