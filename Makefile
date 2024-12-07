@@ -173,12 +173,16 @@ deploy/gcp: build/linux
 deploy/ssh:
 	ssh ${GCP_USER}@${GCP_HOST}
 
-## deploy/copy: Copy file to GCP instance. Usage: make deploy/copy FILE=path/to/file
+## deploy/copy: Copy file to GCP instance. Usage: make deploy/copy FILE=path/to/file [DEST=/remote/path]
 deploy/copy:
 ifndef FILE
-	$(error FILE is not set. Usage: make deploy/copy FILE=path/to/file)
+	$(error FILE is not set. Usage: make deploy/copy FILE=path/to/file [DEST=/remote/path])
 endif
-	scp ${FILE} ${GCP_USER}@${GCP_HOST}:/opt/godo/
+ifdef DEST
+	scp ${FILE} ${GCP_USER}@${GCP_HOST}:${DEST}
+else
+	scp ${FILE} ${GCP_USER}@${GCP_HOST}:~/
+endif
 
 # ============================================================
 # CLI INSTALLATION

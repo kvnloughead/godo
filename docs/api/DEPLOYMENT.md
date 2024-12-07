@@ -229,3 +229,8 @@ gcloud compute instances add-tags YOUR_INSTANCE_NAME \
 ```
 
 The `http-server` tag is required for the default HTTP firewall rule to take effect.
+
+## See Also
+
+- [UPDATE.md](UPDATE.md) for how to update the application code or service configuration
+- [PREREQUISITES.md](PREREQUISITES.md) - Detailed server requirements and setup
