@@ -164,9 +164,12 @@ build/clean: confirm
 .PHONY: deploy/gcp
 deploy/gcp: build/linux
 	@echo 'Deploying to GCP...'
+	@echo 'Stopping service...'
 	@ssh ${GCP_USER}@${GCP_HOST} "sudo systemctl stop godo"
+	@echo 'Copying binary...'
 	@scp build/release/godo-linux-amd64 ${GCP_USER}@${GCP_HOST}:/opt/godo/
-	@ssh ${GCP_USER}@${GCP_HOST} "sudo systemctl start godo"
+	@echo 'Reloading systemd and starting service...'
+	@ssh ${GCP_USER}@${GCP_HOST} "sudo systemctl daemon-reload && sudo systemctl start godo"
 	@echo 'Deployment complete.'
 
 ## deploy/ssh: SSH into the GCP instance

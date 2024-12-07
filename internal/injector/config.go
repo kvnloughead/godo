@@ -242,12 +242,14 @@ func LoadConfig() Config {
 	loadDefaultlessStringSetting(&cfg.SMTP.Username, "SMTP_USERNAME")
 	loadDefaultlessStringSetting(&cfg.SMTP.Password, "SMTP_PASSWORD")
 	loadDefaultlessStringSetting(&cfg.SMTP.Sender, "SMTP_SENDER")
+	loadDefaultlessStringSetting(&cfg.SMTP.Host, "SMTP_HOST")
 
 	// Load integer and duration valued configuration options.
 	loadIntFromEnvOrFlag(&cfg.Port, 4000, "PORT")
 	loadIntFromEnvOrFlag(&cfg.DB.MaxOpenConns, 25, "DB_MAX_OPEN_CONNS")
 	loadIntFromEnvOrFlag(&cfg.DB.MaxIdleConns, 25, "DB_MAX_IDLE_CONNS")
 	loadDurationFromEnvOrFlag(&cfg.DB.MaxIdleTime, 15*time.Minute, "DB_MAX_IDLE_TIME")
+	loadIntFromEnvOrFlag(&cfg.SMTP.Port, 25, "SMTP_PORT")
 
 	// Load Boolean valued configuration options.
 	if !cfg.Verbose.isSet {
