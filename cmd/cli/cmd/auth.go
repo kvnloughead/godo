@@ -45,7 +45,7 @@ var authCmd = &cobra.Command{
 		}
 
 		// Create request
-		url := app.Config.APIBaseURL + "/v1/tokens/authentication"
+		url := app.Config.APIBaseURL + "/tokens/authentication"
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonPayload))
 		if err != nil {
 			app.handleAuthenticationError("Failed to create request", err)
@@ -62,15 +62,17 @@ var authCmd = &cobra.Command{
 
 		// Handle response
 		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusCreated {
-			app.handleAuthenticationError(fmt.Sprintf("Failed to create token for %s", email), nil)
-			return
-		}
-
-		// Read response body
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			app.handleAuthenticationError("Failed to read response body", err)
+			return
+		}
+
+		if resp.StatusCode != http.StatusCreated {
+			app.Logger.Error("authentication failed",
+				"status", resp.Status,
+				"response", string(body))
+			app.handleAuthenticationError(fmt.Sprintf("Failed to authenticate: %s", string(body)), nil)
 			return
 		}
 
