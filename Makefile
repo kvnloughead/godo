@@ -184,15 +184,23 @@ endif
 # CLI INSTALLATION
 # ============================================================
 
+## cli/build: builds the CLI application into a binary called 'gd'
 .PHONY: cli/build
-## cli/build builds the CLI application into a binary called 'gd'.
 cli/build:
-	go build -o godo cmd/cli/main.go
+	@echo 'Building CLI application...'
+	@go build -o godo cmd/cli/main.go
 
+## cli/install: installs the CLI application
 .PHONY: cli/install
-## cli/install installs the CLI application 'gd' to /usr/local/bin.
 cli/install: cli/build
-	mv godo /usr/local/bin
+	@echo 'Installing CLI application...'
+	@mkdir -p ${HOME}/.config/godo
+	@if [ ! -f ${HOME}/.config/godo/settings.json ]; then \
+		echo '{"api_base_url": "http://godo.kevinloughead.com/v1"}' > ${HOME}/.config/godo/settings.json; \
+		echo 'Created default config at ~/.config/godo/settings.json'; \
+	fi
+	@sudo mv godo /usr/local/bin
+	@echo 'CLI installation complete'
 
 .PHONY: cli/logs
 ## cli/logs opens log files in your preferred editor
