@@ -35,7 +35,7 @@ var addCmd = &cobra.Command{
 			return
 		}
 
-		url := app.Config.APIBaseURL + "/v1/todos"
+		url := app.Config.APIBaseURL + "/todos"
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonPayload))
 		if err != nil {
 			app.handleError("Failed to create request", msg, err)

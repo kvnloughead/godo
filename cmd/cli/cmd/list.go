@@ -57,7 +57,7 @@ var listCmd = &cobra.Command{
 
 		msg := "\nError: failed to list todo items. \nCheck `~/.config/godo/logs` for details.\n"
 
-		url := app.Config.APIBaseURL + "/v1/todos"
+		url := app.Config.APIBaseURL + "/todos"
 		if pattern != "" {
 			url = url + "?text=" + pattern
 		}
