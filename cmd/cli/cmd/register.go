@@ -28,6 +28,17 @@ var registerCmd = &cobra.Command{
 	Short: "Register a new user",
 	Long:  "Register a new user with the given email, password, and name. An activation email will be sent to the user.",
 	Run: func(cmd *cobra.Command, args []string) {
+		url := app.Config.APIBaseURL + "/users"
+
+		// Define error handler
+		handleError := func(msg string, err error) {
+			app.Logger.Error(msg,
+				"error", err,
+				"method", http.MethodPost,
+				"url", url)
+			fmt.Println("Error: Registration failed. Check logs for details.")
+		}
+
 		// Prepare JSON payload
 		payload := map[string]string{
 			"email":    email,
@@ -36,21 +47,20 @@ var registerCmd = &cobra.Command{
 		}
 		jsonPayload, err := json.Marshal(payload)
 		if err != nil {
-			app.Logger.Error("failed to marshal JSON", "error", err)
+			handleError("failed to marshal JSON", err)
 			return
 		}
 
 		// Log the request (excluding password)
 		app.Logger.Info("sending registration request",
-			"url", app.Config.APIBaseURL+"/users",
+			"url", url,
 			"email", email,
 			"name", name)
 
 		// Create request
-		url := app.Config.APIBaseURL + "/users"
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonPayload))
 		if err != nil {
-			app.Logger.Error("failed to create request", "error", err)
+			handleError("failed to create request", err)
 			return
 		}
 		req.Header.Set("Content-Type", "application/json")
@@ -58,7 +68,7 @@ var registerCmd = &cobra.Command{
 		// Send request
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			app.Logger.Error("failed to send request", "error", err)
+			handleError("failed to send request", err)
 			return
 		}
 		defer resp.Body.Close()
@@ -66,7 +76,7 @@ var registerCmd = &cobra.Command{
 		// Read response body
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			app.Logger.Error("failed to read response body", "error", err)
+			handleError("failed to read response body", err)
 			return
 		}
 

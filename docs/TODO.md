@@ -4,6 +4,7 @@
 
 - Leave the sandbox email environment when deploying to prod
 - Simplify the process for creating a new user (CLI command(s))
+- Hide password in the CLI
 
 ## GET /v1/todos
 

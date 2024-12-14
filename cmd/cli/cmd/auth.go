@@ -33,11 +33,23 @@ var authCmd = &cobra.Command{
 	Short: "Authenticate a terminal session.",
 	Long:  `TODO - add help text`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Create request url
+		url := app.Config.APIBaseURL + "/tokens/authentication"
+
+		// Define a helper function that captures the parameters that are common to
+		// all errors
+		handleError := func(msg string, err error) {
+			app.handleAuthenticationError(msg, err,
+				"method", http.MethodPost,
+				"url", url)
+		}
 		// Prepare JSON payload from args
 		payload := map[string]string{
 			"email":    email,
 			"password": password,
 		}
+
+		// Then use it throughout the function
 		jsonPayload, err := json.Marshal(payload)
 		if err != nil {
 			app.handleAuthenticationError("Failed to marshal JSON", err)
@@ -45,10 +57,9 @@ var authCmd = &cobra.Command{
 		}
 
 		// Create request
-		url := app.Config.APIBaseURL + "/tokens/authentication"
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonPayload))
 		if err != nil {
-			app.handleAuthenticationError("Failed to create request", err)
+			handleError("Failed to create request", err)
 			return
 		}
 		req.Header.Set("Context-Type", "application/json")
@@ -56,7 +67,7 @@ var authCmd = &cobra.Command{
 		// Send request
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			app.handleAuthenticationError("Failed to send request", err)
+			handleError("Failed to send request", err)
 			return
 		}
 
@@ -64,15 +75,12 @@ var authCmd = &cobra.Command{
 		defer resp.Body.Close()
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			app.handleAuthenticationError("Failed to read response body", err)
+			handleError("Failed to read response body", err)
 			return
 		}
 
 		if resp.StatusCode != http.StatusCreated {
-			app.Logger.Error("authentication failed",
-				"status", resp.Status,
-				"response", string(body))
-			app.handleAuthenticationError(fmt.Sprintf("Failed to authenticate: %s", string(body)), nil)
+			handleError(fmt.Sprintf("Failed to authenticate: %s", string(body)), nil)
 			return
 		}
 
@@ -80,13 +88,13 @@ var authCmd = &cobra.Command{
 		var authResp authResponse
 		err = json.Unmarshal(body, &authResp)
 		if err != nil {
-			app.handleAuthenticationError("Failed to unmarshal response", err)
+			handleError("Failed to unmarshal response", err)
 			return
 		}
 
 		// Retrieve token from response
 		if authResp.AuthenticationToken.Token == "" {
-			app.handleAuthenticationError("Token not found in response", err)
+			handleError("Token not found in response", nil)
 			return
 		}
 		token := authResp.AuthenticationToken.Token
@@ -94,7 +102,7 @@ var authCmd = &cobra.Command{
 		// Save token securely
 		homedir, err := os.UserHomeDir()
 		if err != nil {
-			app.handleAuthenticationError("Failed to get home directory", err)
+			handleError("Failed to get home directory", err)
 			return
 		}
 		configDir := filepath.Join(homedir, ".config/godo")
@@ -102,7 +110,7 @@ var authCmd = &cobra.Command{
 
 		tokenFile := filepath.Join(configDir, ".token")
 		if err := os.WriteFile(tokenFile, []byte(token), 0600); err != nil {
-			app.handleAuthenticationError("Failed to save token", err)
+			handleError("Failed to save token", err)
 			return
 		}
 		fmt.Println("Authentication successful and token saved")

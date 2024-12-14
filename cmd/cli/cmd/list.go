@@ -44,51 +44,53 @@ var listCmd = &cobra.Command{
 	Long:  `TODO - add long help text`,
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		var pattern string
-		if len(args) != 0 {
-			pattern = args[0]
+		url := app.Config.APIBaseURL + "/todos"
+		if len(args) > 0 {
+			url = url + "?text=" + args[0]
+		}
+		stdoutMsg := "\nError: failed to list todo items. \nCheck `~/.config/godo/logs` for details.\n"
+
+		// handleError captures parameters that are common to all errors
+		handleError := func(logMsg string, err error) {
+			app.handleError(logMsg, stdoutMsg, err,
+				"method", http.MethodGet,
+				"url", url)
 		}
 
 		token, err := app.ReadTokenFromFile()
 		if err != nil {
-			app.handleAuthenticationError("Failed to send request", err)
+			app.handleAuthenticationError("Failed to read token", err)
 			return
 		}
 
-		msg := "\nError: failed to list todo items. \nCheck `~/.config/godo/logs` for details.\n"
-
-		url := app.Config.APIBaseURL + "/todos"
-		if pattern != "" {
-			url = url + "?text=" + pattern
-		}
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
-			app.handleError("Failed to create request", msg, err)
+			handleError("Failed to create request", err)
 			return
 		}
 		req.Header.Set("Authorization", "Bearer "+string(token))
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			app.handleError("Failed to send request", msg, err)
+			handleError("Failed to send request", err)
 			return
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			app.handleError("Failed to retrieve todos", msg, fmt.Errorf("response status: %s", resp.Status))
+			handleError("Failed to retrieve todos", fmt.Errorf("response status: %s", resp.Status))
 			return
 		}
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			app.handleError("Failed to read body", msg, err)
+			handleError("Failed to read body", err)
 			return
 		}
 
 		var todoResponse TodoResponse
 		if err := json.Unmarshal(body, &todoResponse); err != nil {
-			app.handleError("Failed to unmarshal JSON", msg, err)
+			handleError("Failed to unmarshal JSON", err)
 			return
 		}
 

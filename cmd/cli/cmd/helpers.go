@@ -43,14 +43,29 @@ func (app *CLIApplication) ReadTokenFromFile() (string, error) {
 
 // handleError handles CLI errors by logging the error with app.Logger.Error and
 // sending a user friendly message with fmt.Println.
-func (app *CLIApplication) handleError(logMsg, stdoutMsg string, err error) {
-	app.Logger.Error(logMsg, "error", err)
+//
+// - logMsg is added as the msg field in the log.
+// - stdoutMsg is printed to stdout.
+// - err is added as the error field in the log.
+// - fields is variadic and is added as additional fields in the log.
+func (app *CLIApplication) handleError(logMsg, stdoutMsg string, err error, fields ...any) {
+	// Convert fields to []any for slog.Error
+	logFields := make([]any, len(fields)+2) // +2 for error field
+	copy(logFields, fields)
+	// Add error at the end
+	logFields[len(fields)] = "error"
+	logFields[len(fields)+1] = err
+
+	app.Logger.Error(logMsg, logFields...)
 	fmt.Println(stdoutMsg)
 }
 
-// handleAuthenticationError handles authentication related errors by calling
-// handleError with the provided arguments, along with a generic error message
-// for the user
-func (app *CLIApplication) handleAuthenticationError(logMsg string, err error) {
-	app.handleError(logMsg, "\nError: failed to authenticate. \nCheck `~/.config/godo/logs` for details.\n", err)
+// handleAuthenticationError handles authentication related errors. It calls
+// handleError with the appropriate log message, error message, and additional
+// fields.
+func (app *CLIApplication) handleAuthenticationError(logMsg string, err error, fields ...any) {
+	app.handleError(logMsg,
+		"\nError: failed to authenticate. \nCheck `~/.config/godo/logs` for details.\n",
+		err,
+		fields...)
 }

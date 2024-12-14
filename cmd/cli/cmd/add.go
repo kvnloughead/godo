@@ -18,27 +18,33 @@ var addCmd = &cobra.Command{
 	Short: "Add a new todo item with the given text.",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		text := args[0]
+		url := app.Config.APIBaseURL + "/todos"
+		stdoutMsg := "\nError: failed to add todo item. \nCheck `~/.config/godo/logs` for details.\n"
+
+		// handleError captures parameters that are common to all errors
+		handleError := func(logMsg string, err error) {
+			app.handleError(logMsg, stdoutMsg, err,
+				"method", http.MethodPost,
+				"url", url)
+		}
 
 		token, err := app.ReadTokenFromFile()
 		if err != nil {
-			app.handleAuthenticationError("Failed to send request", err)
+			app.handleAuthenticationError("Failed to read token", err)
 			return
 		}
 
-		msg := "\nError: failed to add todo item. \nCheck `~/.config/godo/logs` for details.\n"
-
+		text := args[0]
 		payload := map[string]string{"text": text}
 		jsonPayload, err := json.Marshal(payload)
 		if err != nil {
-			app.handleError("Failed to marshal JSON", msg, err)
+			handleError("Failed to marshal JSON", err)
 			return
 		}
 
-		url := app.Config.APIBaseURL + "/todos"
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonPayload))
 		if err != nil {
-			app.handleError("Failed to create request", msg, err)
+			handleError("Failed to create request", err)
 			return
 		}
 		req.Header.Set("Content-Type", "application/json")
@@ -46,13 +52,13 @@ var addCmd = &cobra.Command{
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			app.handleError("Failed to send request", msg, err)
+			handleError("Failed to send request", err)
 			return
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusCreated {
-			app.handleError("Failed to add todo", msg, fmt.Errorf("response status: %s", resp.Status))
+			handleError("Failed to add todo", fmt.Errorf("response status: %s", resp.Status))
 			return
 		}
 
