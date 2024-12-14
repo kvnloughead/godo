@@ -57,6 +57,10 @@ func (app *APIApplication) rateLimit(next http.Handler) http.Handler {
 	var (
 		mu      sync.Mutex
 		clients = make(map[string]*client)
+
+		// Metrics
+		rateLimitExceeded = expvar.NewInt("rate_limit_exceeded_total")
+		currentClients    = expvar.NewInt("rate_limit_current_clients")
 	)
 
 	// Start background goroutine to remove old entries from the clients map.
@@ -71,16 +75,25 @@ func (app *APIApplication) rateLimit(next http.Handler) http.Handler {
 				}
 			}
 
+			// Update the current number of clients.
+			currentClients.Set(int64(len(clients)))
+
 			mu.Unlock()
 		}
 	}()
+
+	// addRateLimitHeaders adds the rate limit headers to the response.
+	addRateLimitHeaders := func(w http.ResponseWriter, remaining float64) {
+		w.Header().Set("X-RateLimit-Limit", strconv.Itoa(app.Config.Limiter.Burst))
+		w.Header().Set("X-RateLimit-Remaining", strconv.FormatFloat(remaining, 'f', 0, 64))
+		w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(time.Now().Add(time.Second).Unix(), 10))
+	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if app.Config.Limiter.Enabled {
 			// Get IP address. If an X-Forwarded-For or X-Real-IP header is found, the
 			// IP is taken from there. Otherwise it is taken from r.RemoteAddr.
 			ip := realip.FromRequest(r)
-
 			mu.Lock()
 
 			// If no limiter exists for current IP, add it to the map of clients.
@@ -94,17 +107,28 @@ func (app *APIApplication) rateLimit(next http.Handler) http.Handler {
 
 			clients[ip].lastSeen = time.Now()
 
+			// If the client's limiter doesn't allow the request, increment the
+			// rateLimitExceeded counter and send a 429 response.
 			if !clients[ip].limiter.Allow() {
 				mu.Unlock()
+				addRateLimitHeaders(w, 0) // 0 remaining tokens
+				rateLimitExceeded.Add(1)
+				app.Logger.Info("rate limit exceeded",
+					"ip", ip,
+					"limit", app.Config.Limiter.RPS,
+					"burst", app.Config.Limiter.Burst,
+				)
 				app.rateLimitExceededReponse(w, r)
 				return
 			}
 
-			// We can't defer unlocking this mutext, because it wouldn't occur until all
-			// downstream handlers have retured.
+			// We can't defer unlocking this mutext, because it wouldn't occur until
+			// all downstream handlers have returned.
+			remaining := clients[ip].limiter.Tokens()
+			addRateLimitHeaders(w, remaining)
 			mu.Unlock()
-		}
 
+		}
 		next.ServeHTTP(w, r)
 	})
 }
