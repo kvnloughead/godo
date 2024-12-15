@@ -175,7 +175,7 @@ func (app *APIApplication) activateUser(w http.ResponseWriter, r *http.Request) 
 	}
 
 	env := envelope{"message": "user successfully activated", "user": user}
-	err = app.writeJSON(w, http.StatusOK, env, nil)
+	err = app.writeJSON(w, http.StatusAccepted, env, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

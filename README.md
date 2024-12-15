@@ -66,6 +66,8 @@ Activates a user's account. The request's body must contain a token field with a
 curl -X PUT -d '{ "token": "PCXEWRH2WX6DSQIAPVBE24CY6I" }' localhost:4000/v1/users/activation
 ```
 
+The response has a 202 status code and its body contains a message and the user object.
+
 ```json
 // Example response
 {
