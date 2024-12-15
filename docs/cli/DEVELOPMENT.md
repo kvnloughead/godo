@@ -42,7 +42,7 @@ The CLI can be configured in several ways (in order of precedence):
    export GODO_API_URL="http://localhost:4000/v1"
    ```
 
-3. Configuration file at `~/.config/godo/settings.json`:
+3. Configuration file. The default location is `~/.config/godo/settings.json`:
 
    ```json
    {
@@ -51,6 +51,20 @@ The CLI can be configured in several ways (in order of precedence):
    ```
 
 4. Default values
+
+For managing multiple environments, you can set up an alias for the CLI:
+
+```bash
+# An alias for running godo from the project root with a local config file
+alias gododev='go run ./cmd/cli/main.go -config=${HOME}/.config/godo/settings.local.json'
+```
+
+Then use it just like the regular CLI:
+
+```bash
+gododev register -e user@example.com -p password -n username
+gododev list
+```
 
 ### Making Changes
 
