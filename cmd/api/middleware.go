@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"expvar"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	validator "github.com/kvnloughead/godo/internal"
 	"github.com/kvnloughead/godo/internal/data"
 
+	"github.com/google/uuid"
 	"github.com/tomasen/realip"
 	"golang.org/x/time/rate"
 )
@@ -330,23 +332,6 @@ func (app *APIApplication) enableCORS(next http.Handler) http.Handler {
 	})
 }
 
-// The logRequest middleware logs info about each HTTP request, including the
-// request's IP, protocol, method, and URI.
-func (app *APIApplication) logRequest(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var (
-			ip       = r.RemoteAddr
-			protocol = r.Proto
-			method   = r.Method
-			uri      = r.URL.RequestURI()
-		)
-
-		app.Logger.Info("received request", "ip", ip, "protocol", protocol, "method", method, "uri", uri)
-
-		next.ServeHTTP(w, r)
-	})
-}
-
 //
 // Metrics
 //
@@ -438,5 +423,65 @@ func (app *APIApplication) metrics(next http.Handler) http.Handler {
 
 		duration := time.Since(start).Microseconds()
 		totalProcessingTimeMicroseconds.Add(duration)
+	})
+}
+
+// Struct requestContext holds metadata about the current request
+type requestContext struct {
+	start      time.Time
+	duration   time.Duration
+	statusCode int
+	userAgent  string
+	authStatus string
+	requestID  string // unique identifier for request tracing
+}
+
+// The contextualizeRequest middleware initializes a requestContext struct at
+// the start of the request, and stores it in the request context. It also
+// creates a response writer wrapper to capture the response's status code.
+func (app *APIApplication) contextualizeRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := &requestContext{
+			start:     time.Now(),
+			userAgent: r.UserAgent(),
+			requestID: uuid.New().String(),
+		}
+
+		app.Logger.Info("request started",
+			"request_id", ctx.requestID,
+			"method", r.Method,
+			"uri", r.URL.RequestURI(),
+		)
+
+		// Store our request context
+		r = r.WithContext(context.WithValue(r.Context(), "requestContext", ctx))
+
+		rw := newMetricResponseWriter(w)
+
+		// Run all middleware
+		next.ServeHTTP(rw, r)
+
+		// Get the final request after all middleware has run
+		finalCtx := r.Context()
+		user, ok := finalCtx.Value(userContextKey).(*data.User)
+		authStatus := "unknown"
+		if ok {
+			if user.IsAnonymous() {
+				authStatus = "anonymous"
+			} else {
+				authStatus = "authenticated"
+			}
+		}
+
+		ctx.duration = time.Since(ctx.start)
+		ctx.statusCode = rw.statusCode
+		ctx.authStatus = authStatus
+
+		app.Logger.Info("request completed",
+			"request_id", ctx.requestID,
+			"duration", ctx.duration,
+			"status", ctx.statusCode,
+			"auth_status", ctx.authStatus,
+		)
 	})
 }

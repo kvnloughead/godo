@@ -23,8 +23,7 @@ type Config struct {
 	// Sends full stack trace of server errors in response.
 	Debug BoolFlag
 
-	// Provides verbose logging and responses in some situations. Currently only
-	// middleware.logRequest makes use of this.
+	// Provides verbose logging and responses in some situations.
 	Verbose BoolFlag
 	DB      DatabaseConfig
 

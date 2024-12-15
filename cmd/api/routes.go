@@ -74,6 +74,6 @@ func (app *APIApplication) Routes() http.Handler {
 	// Expose application metrics as a JSON response to HTTP request.
 	router.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
 
-	middlewares := alice.New(app.logRequest, app.metrics, app.recoverPanic, app.enableCORS, app.rateLimit, app.authenticate)
+	middlewares := alice.New(app.metrics, app.recoverPanic, app.enableCORS, app.rateLimit, app.authenticate, app.contextualizeRequest)
 	return middlewares.Then(router)
 }
