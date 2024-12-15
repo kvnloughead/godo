@@ -200,6 +200,11 @@ func LoadConfig() Config {
 	flag.IntVar(&cfg.DB.MaxIdleConns, "db-max-idle-conns", 25, "Postgresql max idle connections")
 	flag.DurationVar(&cfg.DB.MaxIdleTime, "db-max-idle-time", 15*time.Minute, "Postgresql max connection idle time")
 
+	// Rate limiter flags
+	flag.Float64Var(&cfg.Limiter.RPS, "limiter-rps", 2, "Rate limiter requests per second")
+	flag.IntVar(&cfg.Limiter.Burst, "limiter-burst", 4, "Rate limiter max burst")
+	flag.BoolVar(&cfg.Limiter.Enabled, "limiter-enabled", true, "Rate limiter enabled")
+
 	// SMTP flags
 	flag.StringVar(&cfg.SMTP.Host, "smtp-host", "sandbox.smtp.mailtrap.io", "SMTP host")
 	flag.IntVar(&cfg.SMTP.Port, "smtp-port", 25, "SMTP server port")
