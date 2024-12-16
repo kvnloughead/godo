@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/kvnloughead/godo/internal/data"
@@ -23,15 +24,15 @@ func (app *APIApplication) contextSetUser(r *http.Request, user *data.User) *htt
 	return r.WithContext(ctx)
 }
 
-// The contextGetUser method retrieves the value of the request context's user
-// field, converts it to a *data.User, and returns it.
+// contextGet retrieves a value from the request context with type safety.
+// Example usage:
 //
-// This function should only be called when a User struct value is expected
-// to be in the request context. If one is not found, there is a panic.
-func (app *APIApplication) contextGetUser(r *http.Request) *data.User {
-	user, ok := r.Context().Value(userContextKey).(*data.User)
+//	user := contextGet[*data.User](r, userContextKey)
+//	reqCtx := contextGet[*requestContext](r, requestContextKey)
+func contextGet[T any](r *http.Request, key contextKey) T {
+	value, ok := r.Context().Value(key).(T)
 	if !ok {
-		panic("missing user value in request context")
+		panic(fmt.Sprintf("missing or invalid type for %s in request context", key))
 	}
-	return user
+	return value
 }

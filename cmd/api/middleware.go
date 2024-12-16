@@ -203,7 +203,7 @@ func (app *APIApplication) authenticate(next http.Handler) http.Handler {
 // with it.
 func (app *APIApplication) requireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := app.contextGetUser(r)
+		user := contextGet[*data.User](r, userContextKey)
 
 		if user.IsAnonymous() {
 			app.authenticationRequiredResponse(w, r)
@@ -230,7 +230,7 @@ func (app *APIApplication) requireAuthenticatedUser(next http.HandlerFunc) http.
 // with it.
 func (app *APIApplication) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
 	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := app.contextGetUser(r)
+		user := contextGet[*data.User](r, userContextKey)
 
 		if !user.Activated {
 			app.activationRequiredResponse(w, r)
@@ -258,7 +258,7 @@ func (app *APIApplication) requirePermission(permission data.PermissionCode, nex
 	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// There is no need to check IsAnonymous, this is handled by an earlier
 		// middleware in the chain.
-		user := app.contextGetUser(r)
+		user := contextGet[*data.User](r, userContextKey)
 
 		permissions, err := app.Models.Permissions.GetAllForUser(user.ID)
 		if err != nil {
@@ -462,15 +462,12 @@ func (app *APIApplication) contextualizeRequest(next http.Handler) http.Handler 
 		next.ServeHTTP(rw, r)
 
 		// Get the final request after all middleware has run
-		finalCtx := r.Context()
-		user, ok := finalCtx.Value(userContextKey).(*data.User)
+		user := contextGet[*data.User](r, userContextKey)
 		authStatus := "unknown"
-		if ok {
-			if user.IsAnonymous() {
-				authStatus = "anonymous"
-			} else {
-				authStatus = "authenticated"
-			}
+		if user.IsAnonymous() {
+			authStatus = "anonymous"
+		} else {
+			authStatus = "authenticated"
 		}
 
 		ctx.duration = time.Since(ctx.start)

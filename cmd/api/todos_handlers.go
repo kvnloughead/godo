@@ -53,7 +53,7 @@ func (app *APIApplication) listTodos(w http.ResponseWriter, r *http.Request) {
 
 	todos, paginationData, err := app.Models.Todos.GetAll(
 		input.Text,
-		app.contextGetUser(r).ID,
+		contextGet[*data.User](r, userContextKey).ID,
 		input.Contexts,
 		input.Projects,
 		input.Filters,
@@ -102,7 +102,7 @@ func (app *APIApplication) createTodo(w http.ResponseWriter, r *http.Request) {
 
 	todo := &data.Todo{
 		Text:      input.Text,
-		UserID:    app.contextGetUser(r).ID,
+		UserID:    contextGet[*data.User](r, userContextKey).ID,
 		Contexts:  input.Contexts,
 		Projects:  input.Projects,
 		Priority:  input.Priority,
@@ -145,7 +145,7 @@ func (app *APIApplication) getTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := app.contextGetUser(r).ID
+	userID := contextGet[*data.User](r, userContextKey).ID
 
 	todo, err := app.Models.Todos.GetTodoIfOwned(id, userID)
 	if err != nil {
@@ -180,7 +180,7 @@ func (app *APIApplication) updateTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := app.contextGetUser(r).ID
+	userID := contextGet[*data.User](r, userContextKey).ID
 
 	todo, err := app.Models.Todos.GetTodoIfOwned(id, userID)
 	if err != nil {
