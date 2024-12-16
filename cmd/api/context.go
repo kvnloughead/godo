@@ -10,7 +10,10 @@ import (
 // The contextKey type is a custom string type for request context keys.
 type contextKey string
 
-var userContextKey = contextKey("user")
+var (
+	userContextKey    = contextKey("user")
+	requestContextKey = contextKey("requestContext")
+)
 
 // The contextSetUser method accepts a request and a user struct as arguments,
 // adds the user to the request's context with a key of "user", and returns a

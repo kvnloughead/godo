@@ -454,7 +454,7 @@ func (app *APIApplication) contextualizeRequest(next http.Handler) http.Handler 
 		)
 
 		// Store our request context
-		r = r.WithContext(context.WithValue(r.Context(), "requestContext", ctx))
+		r = r.WithContext(context.WithValue(r.Context(), requestContextKey, ctx))
 
 		rw := newMetricResponseWriter(w)
 
