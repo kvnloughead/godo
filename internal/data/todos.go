@@ -66,8 +66,24 @@ func (m TodoModel) GetAll(text string, userID int64, contexts []string, projects
 			count(*) OVER(),
 			id, created_at, text, contexts, projects, priority, completed, version
 		FROM todos
-		WHERE (to_tsvector('english', text)
-					 @@ plainto_tsquery('english', $1) OR $1 = '')
+		WHERE (
+			CASE 
+				WHEN $1 LIKE '@%%' THEN -- if searching for a context
+					EXISTS (
+						SELECT 1 
+						FROM unnest(contexts) c 
+						WHERE c LIKE $1 || '%%'
+					)
+				WHEN $1 LIKE '+%%' THEN -- if searching for a project
+					EXISTS (
+						SELECT 1 
+						FROM unnest(projects) p 
+						WHERE p LIKE $1 || '%%'
+					)
+				ELSE -- normal text search
+					text ILIKE '%%' || $1 || '%%'
+			END
+		)
 		AND (contexts @> $2 OR $2 = '{}')
 		AND (projects @> $3 OR $3 = '{}')
 		AND user_id = $4
