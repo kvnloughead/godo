@@ -208,3 +208,14 @@ curl -X PATCH -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" -d '{ "compl
   }
 }
 ```
+
+### DELETE /v1/todos/:id
+
+Deletes a todo by its ID, but only if it is owned by the current user.
+
+If there is no such todo a 404 response is sent.
+
+```bash
+# Example usage
+curl -X DELETE -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" localhost:4000/v1/todos/1
+```
