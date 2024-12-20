@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -44,17 +46,20 @@ var listCmd = &cobra.Command{
 	Long:  `TODO - add long help text`,
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		url := app.Config.APIBaseURL + "/todos"
+		baseURL := app.Config.APIBaseURL + "/todos"
 		if len(args) > 0 {
-			url = url + "?text=" + args[0]
+			searchText := strings.ReplaceAll(args[0], "+", "%2B")
+			searchPattern := url.QueryEscape(searchText)
+			baseURL = baseURL + "?text=" + searchPattern
 		}
+
 		stdoutMsg := "\nError: failed to list todo items. \nCheck `~/.config/godo/logs` for details.\n"
 
 		// handleError captures parameters that are common to all errors
 		handleError := func(logMsg string, err error) {
 			app.handleError(logMsg, stdoutMsg, err,
 				"method", http.MethodGet,
-				"url", url)
+				"url", baseURL)
 		}
 
 		token, err := app.ReadTokenFromFile()
@@ -63,7 +68,7 @@ var listCmd = &cobra.Command{
 			return
 		}
 
-		req, err := http.NewRequest(http.MethodGet, url, nil)
+		req, err := http.NewRequest(http.MethodGet, baseURL, nil)
 		if err != nil {
 			handleError("Failed to create request", err)
 			return

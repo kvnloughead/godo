@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	validator "github.com/kvnloughead/godo/internal"
 	"github.com/kvnloughead/godo/internal/data"
@@ -17,24 +18,24 @@ func (app *APIApplication) listTodos(w http.ResponseWriter, r *http.Request) {
 	// input is an anonymous struct intended to store the query params for
 	// filtering, sorting, and pagination.
 	var input struct {
-		Text     string
-		Contexts []string
-		Projects []string
-
-		// TODO - implement additional query params for filtering.
-		// Priority rune
-		// Completed bool
+		Text string
 		data.Filters
 	}
 
 	v := validator.New()
 	qs := r.URL.Query()
 
-	// Read query params into the input struct, setting reasonable defaults if
-	// any are omitted, and validating the values that should be integers.
-	input.Text = app.readQueryString(qs, "text", "")
-	input.Contexts = app.readQueryCSV(qs, "contexts", []string{})
-	input.Projects = app.readQueryCSV(qs, "projects", []string{})
+	// URL decode the text parameter
+	encodedText := app.readQueryString(qs, "text", "")
+	fmt.Println("encodedText:", encodedText)
+	decodedText, err := url.QueryUnescape(encodedText)
+	fmt.Println("decodedText:", decodedText)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+	input.Text = decodedText
+
 	input.Filters.Page = app.readQueryInt(qs, "page", 1, v)
 	input.Filters.PageSize = app.readQueryInt(qs, "page_size", 20, v)
 	input.Filters.Sort = app.readQueryString(qs, "sort", "id")
@@ -45,17 +46,11 @@ func (app *APIApplication) listTodos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data.ValidateFilters(v, input.Filters)
-	if !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
-		return
-	}
-
 	todos, paginationData, err := app.Models.Todos.GetAll(
 		input.Text,
 		contextGet[*data.User](r, userContextKey).ID,
-		input.Contexts,
-		input.Projects,
+		nil,
+		nil,
 		input.Filters,
 	)
 

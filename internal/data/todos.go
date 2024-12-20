@@ -59,42 +59,20 @@ type TodoModel struct {
 //
 // Pagination metadata is returned in the response, unless no records are found.
 func (m TodoModel) GetAll(text string, userID int64, contexts []string, projects []string, filters Filters) ([]*Todo, PaginationData, error) {
-	// We are using fmt.Sprintf to interpolate column names, since it is not
-	// possible to do that with postgresql placeholders.
-	query := fmt.Sprintf(`
+	query := fmt.Sprintf(` 
 		SELECT 
 			count(*) OVER(),
 			id, created_at, text, contexts, projects, priority, completed, version
 		FROM todos
-		WHERE (
-			CASE 
-				WHEN $1 LIKE '@%%' THEN -- if searching for a context
-					EXISTS (
-						SELECT 1 
-						FROM unnest(contexts) c 
-						WHERE c LIKE $1 || '%%'
-					)
-				WHEN $1 LIKE '+%%' THEN -- if searching for a project
-					EXISTS (
-						SELECT 1 
-						FROM unnest(projects) p 
-						WHERE p LIKE $1 || '%%'
-					)
-				ELSE -- normal text search
-					text ILIKE '%%' || $1 || '%%'
-			END
-		)
-		AND (contexts @> $2 OR $2 = '{}')
-		AND (projects @> $3 OR $3 = '{}')
-		AND user_id = $4
+		WHERE text ILIKE '%%' || $1 || '%%'
+		AND user_id = $2
 		ORDER BY %s %s, id ASC
-		LIMIT $5 OFFSET $6`, filters.sortColumn(), filters.sortDirection())
+		LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
 
 	ctx, cancel := CreateTimeoutContext(QueryTimeout)
 	defer cancel()
 
-	// Retrieve matching rows from database.
-	args := []any{text, pq.Array(contexts), pq.Array(projects), userID, filters.limit(), filters.offset()}
+	args := []any{text, userID, filters.limit(), filters.offset()}
 	rows, err := m.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, PaginationData{}, err
