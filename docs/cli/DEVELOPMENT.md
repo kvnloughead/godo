@@ -115,3 +115,21 @@ cmd/cli/
 
 2. Implement the command logic in the new file
 3. The command will automatically be added to the root command
+
+### Searching Todos
+
+The `list` command supports searching todos using patterns:
+
+```bash
+# Search by regular text
+godo list "buy milk"
+
+# Search by context (using @ symbol)
+godo list @home
+
+# Search by project (using + symbol)
+godo list +shopping
+
+# The search is case-insensitive and matches anywhere in the todo text
+godo list milk  # matches "buy MILK" and "milkshake"
+```

@@ -9,6 +9,10 @@ A todo tracking application written in Go. Features will eventually include:
 
 See [SETUP.md](./SETUP.md) for a quickstart guide.
 
+## Limitations
+
+- Todo.txt style parsing is not implemented, so the context and projects fields are not filled. However searching by context and project is handled by text searches starting with `@` or `+`.
+
 ## Endpoints that don't require authentication
 
 Usage example s assume you are running the app locally with either `make run/api` or `make run/air`. The API is currently not deployed.
@@ -126,19 +130,45 @@ curl -X POST -d '{ "email": "user@mail.com", "password": "password" }' localhost
 ### GET /v1/todos
 
 Returns an array containing the user's todo items, as well as some pagination data.
+Supports text search via the `text` query parameter.
 
 ```bash
-# Example usage
+# List all todos
 curl -H "Authorization: Bearer EZVNRJHUXXXXXXZQGKTXIWDDFQ" localhost:4000/v1/todos
+
+# Search todos (matches anywhere in the text)
+curl -H "Authorization: Bearer EZVNRJHUXXXXXXZQGKTXIWDDFQ" localhost:4000/v1/todos?text=milk
+
+# Search by context
+curl -H "Authorization: Bearer EZVNRJHUXXXXXXZQGKTXIWDDFQ" localhost:4000/v1/todos?text=@home
+
+# Search by project
+curl -H "Authorization: Bearer EZVNRJHUXXXXXXZQGKTXIWDDFQ" localhost:4000/v1/todos?text=%2Bshopping
 ```
 
 ```json
 // Example response
 {
-  "paginationData": { ... },
-  "todos": [ ... ]
+  "paginationData": {
+    "current_page": 1,
+    "page_size": 20,
+    "first_page": 1,
+    "last_page": 1,
+    "total_records": 2
+  },
+  "todos": [
+    {
+      "id": 1,
+      "text": "buy milk @home +shopping"
+      // ... other fields ...
+    }
+    // ... more todos ...
+  ]
 }
 ```
+
+Note: When using curl directly, the `+` symbol in projects needs to be URL encoded as `%2B`.
+The CLI handles this encoding automatically.
 
 ### POST /v1/todos
 
