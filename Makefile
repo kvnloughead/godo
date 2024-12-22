@@ -202,13 +202,25 @@ cli/install: cli/build
 	@sudo mv godo /usr/local/bin
 	@echo 'CLI installation complete'
 
-## cli/setup-local: creates local settings file for development
+## cli/setup-local: creates local settings file for development and adds alias to shell config
 .PHONY: cli/setup-local
 cli/setup-local:
 	@echo 'Setting up local development configuration...'
 	@mkdir -p ${HOME}/.config/godo
-	@echo '{"api_base_url": "http://localhost:4000/v1"}' > ${HOME}/.config/godo/settings.local.json
-	@echo 'Created local config at ~/.config/godo/settings.local.json'
+	@if [ ! -f ${HOME}/.config/godo/settings.local.json ]; then \
+		echo '{"api_base_url": "http://localhost:4000/v1"}' > ${HOME}/.config/godo/settings.local.json; \
+		echo 'Created local config at ~/.config/godo/settings.local.json'; \
+	else \
+		echo 'Local config already exists at ~/.config/godo/settings.local.json'; \
+	fi
+	@if ! grep -q "alias gododev=" "${HOME}/.bashrc"; then \
+		echo '\n# alias for running godo from the project root with a local config file' >> ${HOME}/.bashrc; \
+		echo 'alias gododev='"'"'go run ./cmd/cli/main.go -c=${HOME}/.config/godo/settings.local.json'"'" >> ${HOME}/.bashrc; \
+		echo 'Added gododev alias to ~/.bashrc'; \
+	else \
+		echo 'gododev alias already exists in ~/.bashrc'; \
+	fi
+	@echo 'Please run: source ~/.bashrc'
 
 .PHONY: cli/logs
 ## cli/logs opens log files in your preferred editor
