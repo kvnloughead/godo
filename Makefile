@@ -202,6 +202,14 @@ cli/install: cli/build
 	@sudo mv godo /usr/local/bin
 	@echo 'CLI installation complete'
 
+## cli/setup-local: creates local settings file for development
+.PHONY: cli/setup-local
+cli/setup-local:
+	@echo 'Setting up local development configuration...'
+	@mkdir -p ${HOME}/.config/godo
+	@echo '{"api_base_url": "http://localhost:4000/v1"}' > ${HOME}/.config/godo/settings.local.json
+	@echo 'Created local config at ~/.config/godo/settings.local.json'
+
 .PHONY: cli/logs
 ## cli/logs opens log files in your preferred editor
 cli/logs:

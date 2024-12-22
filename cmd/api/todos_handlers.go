@@ -27,9 +27,7 @@ func (app *APIApplication) listTodos(w http.ResponseWriter, r *http.Request) {
 
 	// URL decode the text parameter
 	encodedText := app.readQueryString(qs, "text", "")
-	fmt.Println("encodedText:", encodedText)
 	decodedText, err := url.QueryUnescape(encodedText)
-	fmt.Println("decodedText:", decodedText)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
