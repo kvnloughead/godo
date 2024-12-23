@@ -147,10 +147,17 @@ func (app *APIApplication) createAuthenticationToken(w http.ResponseWriter, r *h
 		return
 	}
 
-	// If the credentials check out we generate a token with a 24 hour expiry and
+	// Set the expiry time based on the environment.
+	var expiry time.Duration
+	if app.Config.Env == "production" {
+		expiry = 14 * 24 * time.Hour
+	} else {
+		expiry = 28 * 24 * time.Hour
+	}
+
+	// If the credentials check out we generate a token with a 14 day expiry and
 	// an "authentication" scope.
-	token, err := app.Models.Tokens.New(user.ID, 24*time.Hour,
-		data.Authentication)
+	token, err := app.Models.Tokens.New(user.ID, expiry, data.Authentication)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
