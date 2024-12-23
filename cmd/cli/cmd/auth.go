@@ -11,7 +11,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/kvnloughead/godo/cmd/cli/token"
 	"github.com/spf13/cobra"
 )
 
@@ -97,19 +99,12 @@ var authCmd = &cobra.Command{
 			handleError("Token not found in response", nil)
 			return
 		}
-		token := authResp.AuthenticationToken.Token
+		authToken := authResp.AuthenticationToken.Token
 
-		// Save token securely
-		homedir, err := os.UserHomeDir()
-		if err != nil {
-			handleError("Failed to get home directory", err)
-			return
-		}
-		configDir := filepath.Join(homedir, ".config/godo")
-		os.MkdirAll(configDir, 0755)
-
-		tokenFile := filepath.Join(configDir, ".token")
-		if err := os.WriteFile(tokenFile, []byte(token), 0600); err != nil {
+		// Save token securely using token manager
+		isDev := strings.Contains(app.Config.APIBaseURL, "localhost")
+		tokenManager := token.NewManager(filepath.Join(os.Getenv("HOME"), ".config/godo"), isDev)
+		if err := tokenManager.SaveToken(authToken); err != nil {
 			handleError("Failed to save token", err)
 			return
 		}

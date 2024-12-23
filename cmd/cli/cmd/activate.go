@@ -22,7 +22,7 @@ type ActivationResponse struct {
 }
 
 var (
-	token string
+	activationToken string
 )
 
 var activateCmd = &cobra.Command{
@@ -31,7 +31,7 @@ var activateCmd = &cobra.Command{
 	Long:  "Activate a user with the given token.",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		token = args[0]
+		activationToken = args[0]
 		url := app.Config.APIBaseURL + "/users/activation"
 
 		// Define error handler
@@ -45,7 +45,7 @@ var activateCmd = &cobra.Command{
 
 		// Prepare JSON payload
 		payload := map[string]string{
-			"token": token,
+			"token": activationToken,
 		}
 		jsonPayload, err := json.Marshal(payload)
 		if err != nil {
@@ -56,7 +56,7 @@ var activateCmd = &cobra.Command{
 		// Log the request (excluding password)
 		app.Logger.Info("sending activation request",
 			"url", url,
-			"token", token)
+			"token", activationToken)
 
 		// Create request
 		req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(jsonPayload))
