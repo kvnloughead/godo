@@ -13,8 +13,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"syscall"
+
 	"github.com/kvnloughead/godo/cmd/cli/token"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 type authResponse struct {
@@ -29,12 +32,31 @@ var (
 	password string
 )
 
-// authCmd represents the auth command
+// authCommand authenticates a user and saves authentication token to the
+// .config/godo/.token file. Email and password can be provided via flags. If
+// not provided, the user will be prompted for them securely.
 var authCmd = &cobra.Command{
 	Use:   "auth",
 	Short: "Authenticate a terminal session.",
-	Long:  `TODO - add help text`,
+	Long:  `Authenticate a terminal session. If email or password are not provided via flags, the user will be prompted for them securely.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// If email wasn't provided via flag, prompt for it
+		if email == "" {
+			fmt.Print("Enter email: ")
+			fmt.Scanln(&email)
+		}
+
+		// If password wasn't provided via flag, prompt for it securely
+		if password == "" {
+			fmt.Print("Enter password: ")
+			bytePassword, err := term.ReadPassword(int(syscall.Stdin))
+			if err != nil {
+				app.handleAuthenticationError("Failed to read password", err)
+				return
+			}
+			fmt.Println() // Add newline after password input
+			password = string(bytePassword)
+		}
 		// Create request url
 		url := app.Config.APIBaseURL + "/tokens/authentication"
 
@@ -51,7 +73,7 @@ var authCmd = &cobra.Command{
 			"password": password,
 		}
 
-		// Then use it throughout the function
+		// Marshal payload to JSON
 		jsonPayload, err := json.Marshal(payload)
 		if err != nil {
 			app.handleAuthenticationError("Failed to marshal JSON", err)
@@ -115,7 +137,5 @@ var authCmd = &cobra.Command{
 func init() {
 	authCmd.Flags().StringVarP(&email, "email", "e", "", "Email")
 	authCmd.Flags().StringVarP(&password, "password", "p", "", "Password")
-	authCmd.MarkFlagRequired("email")
-	authCmd.MarkFlagRequired("password")
 	rootCmd.AddCommand(authCmd)
 }
