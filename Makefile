@@ -93,7 +93,7 @@ db/drop: confirm
 ## db/psql: connect the the database using psql
 .PHONY: db/psql
 db/psql:
-	psql ${DB_DSN}
+	@psql ${DB_DSN}
 
 ## db/migrations/new name=$1: generate new migration files
 .PHONY: db/migrations/new
@@ -179,6 +179,12 @@ ifndef FILE
 	$(error FILE is not set. Usage: make deploy/copy FILE=path/to/file)
 endif
 	scp ${FILE} ${GCP_USER}@${GCP_HOST}:/opt/godo/
+
+## deploy/psql: connect to the production database using psql
+.PHONY: deploy/psql
+deploy/psql:
+	@echo 'Connecting to production database...'
+	@@ENV=production make db/psql
 
 # ============================================================
 # CLI INSTALLATION
