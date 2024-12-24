@@ -1,6 +1,3 @@
-/*
-Copyright © 2024 Kevin Loughead <kvnloughead@gmail.com>
-*/
 package cmd
 
 import (
@@ -9,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// updateCmd represents the update command
 var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "A brief description of your command",

@@ -1,6 +1,3 @@
-/*
-Copyright © 2024 Kevin Loughead <kvnloughead@gmail.com>
-*/
 package cmd
 
 import (
@@ -12,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// addCmd creates a new todo item. The todo text must be quoted if it contains
+// spaces. This command requires authentication.
 var addCmd = &cobra.Command{
 	Use:   "add <text>",
 	Short: "Add a new todo item with the given text",

@@ -1,6 +1,3 @@
-/*
-Copyright © 2024 Kevin Loughead <kvnloughead@gmail.com>
-*/
 package cmd
 
 import (
@@ -9,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// doneCmd represents the done command
 var doneCmd = &cobra.Command{
 	Use:   "done <ID>",
 	Short: "Mark a todo item as completed",

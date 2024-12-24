@@ -1,6 +1,3 @@
-/*
-Copyright © 2024 Kevin Loughead <kvnloughead@gmail.com>
-*/
 package cmd
 
 import (
@@ -32,9 +29,9 @@ var (
 	password string
 )
 
-// authCommand authenticates a user and saves authentication token to the
-// .config/godo/.token file. Email and password can be provided via flags. If
-// not provided, the user will be prompted for them securely.
+// authCmd authenticates a user and creates a token for subsequent API requests.
+// The token is stored in the user's config directory and is valid for 14 days
+// in production or 28 days in development.
 var authCmd = &cobra.Command{
 	Use:   "auth [-e email] [-p password]",
 	Short: "Authenticate with the Godo API",

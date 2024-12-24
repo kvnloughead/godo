@@ -1,6 +1,3 @@
-/*
-Copyright © 2024 Kevin Loughead <kvnloughead@gmail.com>
-*/
 package cmd
 
 import (
@@ -37,16 +34,14 @@ type TodoResponse struct {
 	Todos          []Todo         `json:"todos"`
 }
 
-// listCmd lists a users todos, filtered by an optional pattern argument. By
-// default, the todos are listed by text only. The --verbose flag will display
-// the entire documents.
+// listCmd displays all todos for the authenticated user. Results are shown
+// in reverse chronological order (oldest on top).
 var listCmd = &cobra.Command{
 	Use:   "list [pattern]",
 	Short: "List all todo items",
 	Long: `
 List all todo items for the authenticated user. Items are displayed in
-chronological order and can be filtered by a plain text search pattern. If the
-pattern contains multiple words it must be enclosed in quotes.	
+reverse chronological order (oldest on top) and can be filtered by a plain text search pattern. If the pattern contains multiple words it must be enclosed in quotes.
 
 Examples:
 

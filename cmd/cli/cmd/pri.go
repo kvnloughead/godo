@@ -1,6 +1,3 @@
-/*
-Copyright © 2024 Kevin Loughead <kvnloughead@gmail.com>
-*/
 package cmd
 
 import (
@@ -9,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// priCmd represents the pri command
 var priCmd = &cobra.Command{
 	Use:   "pri",
 	Short: "A brief description of your command",

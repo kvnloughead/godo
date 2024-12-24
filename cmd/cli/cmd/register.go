@@ -23,6 +23,8 @@ var (
 	name string
 )
 
+// registerCmd creates a new user account. After registration, an activation
+// token is sent to the provided email address.
 var registerCmd = &cobra.Command{
 	Use:   "register [-e email]",
 	Short: "Register a new user account",

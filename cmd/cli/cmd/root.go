@@ -1,6 +1,6 @@
-/*
-Copyright © 2024 Kevin Loughead <kvnloughead@gmail.com>
-*/
+// Package cmd implements the CLI commands for the godo application.
+// It provides commands for user management (register, activate, auth)
+// and todo management (add, list, and delete).
 package cmd
 
 import (
@@ -13,7 +13,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands
+// rootCmd is the base command for the godo CLI. It provides a way to manage
+// todos and user accounts.
 var (
 	rootCmd = &cobra.Command{
 		Use:   "godo [command]",

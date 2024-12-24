@@ -1,6 +1,3 @@
-/*
-Copyright © 2024 Kevin Loughead <kvnloughead@gmail.com>
-*/
 package cmd
 
 import (
@@ -11,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// deleteCmd removes a todo item by its ID. Users can only delete their own todos. This command requires authentication.
 var deleteCmd = &cobra.Command{
 	Use:   "delete <id>",
 	Short: "Delete a todo item by its ID",

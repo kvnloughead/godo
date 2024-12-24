@@ -25,6 +25,9 @@ var (
 	activationToken string
 )
 
+// activateCmd activates a user's account using the token received via email
+// during registration. An account must be activated before it can be used to
+// manage todos.
 var activateCmd = &cobra.Command{
 	Use:   "activate <token>",
 	Short: "Activate a new user's account",

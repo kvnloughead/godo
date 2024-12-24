@@ -1,6 +1,3 @@
-/*
-Copyright © 2024 Kevin Loughead <kvnloughead@gmail.com>
-*/
 package cmd
 
 import (
@@ -9,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// depriCmd represents the depri command
 var depriCmd = &cobra.Command{
 	Use:   "depri",
 	Short: "A brief description of your command",
