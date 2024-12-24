@@ -42,9 +42,24 @@ type TodoResponse struct {
 // the entire documents.
 var listCmd = &cobra.Command{
 	Use:   "list [pattern]",
-	Short: "A brief description of your command",
-	Long:  `TODO - add long help text`,
-	Args:  cobra.MaximumNArgs(1),
+	Short: "List all todo items",
+	Long: `
+List all todo items for the authenticated user. Items are displayed in
+chronological order and can be filtered by a plain text search pattern. If the
+pattern contains multiple words it must be enclosed in quotes.	
+
+Examples:
+
+    # List all todos
+    godo list
+
+
+    # List all todos with @phone in the text
+    godo list @phone
+
+This command requires authentication. Run 'godo auth -h' for more information
+about authentication.`,
+	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		baseURL := app.Config.APIBaseURL + "/todos"
 		if len(args) > 0 {

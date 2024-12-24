@@ -24,9 +24,26 @@ var (
 )
 
 var registerCmd = &cobra.Command{
-	Use:   "register -e EMAIL -p PASSWORD -n NAME",
-	Short: "Register a new user",
-	Long:  "Register a new user with the given email, password, and name. An activation email will be sent to the user.",
+	Use:   "register [-e email]",
+	Short: "Register a new user account",
+	Long: `
+Register a new user account with godo. After registration, you'll receive an email with an activation token. You must activate your account before you can use it.
+
+If an email is not provided via flag, you will be prompted for it.
+
+Examples:
+
+    # Register with email flag
+    godo register -e user@example.com
+
+    # Register with prompt
+    godo register
+
+After registering, check your email for the activation token and run:
+
+    godo activate <token>
+
+See 'godo activate -h' for more information.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		url := app.Config.APIBaseURL + "/users"
 

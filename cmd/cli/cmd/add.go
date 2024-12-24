@@ -12,11 +12,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// addCmd represents the add command
 var addCmd = &cobra.Command{
 	Use:   "add <text>",
-	Short: "Add a new todo item with the given text.",
-	Args:  cobra.ExactArgs(1),
+	Short: "Add a new todo item with the given text",
+	Long: `
+Add a new todo item with the given text. Text with spaces must be enclosed in quotes. For example:
+
+    # Add a todo item
+    godo add "Buy groceries"
+
+This command requires authentication. Run 'godo auth -h' for more information.`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		url := app.Config.APIBaseURL + "/todos"
 		stdoutMsg := "\nError: failed to add todo item. \nCheck `~/.config/godo/logs` for details.\n"

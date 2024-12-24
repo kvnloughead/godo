@@ -36,9 +36,26 @@ var (
 // .config/godo/.token file. Email and password can be provided via flags. If
 // not provided, the user will be prompted for them securely.
 var authCmd = &cobra.Command{
-	Use:   "auth",
-	Short: "Authenticate a terminal session.",
-	Long:  `Authenticate a terminal session. If email or password are not provided via flags, the user will be prompted for them securely.`,
+	Use:   "auth [-e email] [-p password]",
+	Short: "Authenticate with the Godo API",
+	Long: `
+Authenticates a godo user's account. This will create an authentication token that will be used for subsequent commands. The token is valid for 14 days in production and 28 days in development mode.
+
+If email or password are not provided via flags, you will be prompted for them.
+The password will not be displayed when typed.
+
+Examples:
+
+    # Authenticate with flags
+    godo auth -e user@example.com -p mypassword
+
+    # Authenticate with prompts
+    godo auth
+
+    # Authenticate with email flag only (will prompt for password)
+    godo auth -e user@example.com
+
+Only an activated user can be authenticated. Run 'godo activate -h' for more information.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// If email wasn't provided via flag, prompt for it
 		if email == "" {

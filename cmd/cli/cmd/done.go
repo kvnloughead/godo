@@ -11,9 +11,15 @@ import (
 
 // doneCmd represents the done command
 var doneCmd = &cobra.Command{
-	Use:   "done",
-	Short: "A brief description of your command",
-	Long:  `TODO - add long help text`,
+	Use:   "done <ID>",
+	Short: "Mark a todo item as completed",
+	Long: `
+Mark a todo item as completed. For example:
+
+	godo done 42
+
+The ID must be a positive integer.`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("done called")
 	},

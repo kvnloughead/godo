@@ -11,15 +11,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// deleteCmd represents the delete command
 var deleteCmd = &cobra.Command{
-	Use:   "delete <ID>",
-	Short: "Delete a todo item by ID",
-	Long: `Delete a todo item by its ID. For example:
-	
-	godo delete 42
+	Use:   "delete <id>",
+	Short: "Delete a todo item by its ID",
+	Long: `
+Delete a todo item by its ID. The ID can be found in the leftmost column when
+listing todos.
 
-The ID must be a positive integer.`,
+Examples:
+
+    # Delete todo with ID 123
+    godo delete 123
+
+This command requires authentication. Run 'godo auth -h' for more information
+about authentication.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		id, err := strconv.Atoi(args[0])

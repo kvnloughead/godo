@@ -26,10 +26,16 @@ var (
 )
 
 var activateCmd = &cobra.Command{
-	Use:   "activate TOKEN",
-	Short: "Activate a user",
-	Long:  "Activate a user with the given token.",
-	Args:  cobra.ExactArgs(1),
+	Use:   "activate <token>",
+	Short: "Activate a new user's account",
+	Long: `
+Activate a user's account with the given token. For example:
+
+	godo activate 1234567890
+
+The activation token is sent to the user in a welcome email received when
+they register.`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		activationToken = args[0]
 		url := app.Config.APIBaseURL + "/users/activation"
