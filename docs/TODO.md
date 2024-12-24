@@ -1,38 +1,54 @@
 # TODO
 
-## CLI
+### Todo Management Commands
 
-- [x] Simplify the process for creating a new user (CLI command(s))
-- [x] Prompt for email and password securely in the CLI
-- [x] Hide password in the CLI
+- [ ] `done` command to mark todos as completed
+- [ ] Command to mark todos as not done (name TBD)
+- [ ] `update` command to modify existing todos
+- [ ] Interactive listing with numbered results and pagination
+- [ ] Command to edit todos in preferred editor
+- [ ] Command to sync edited todos back to API
+
+### Todo Listing and Filtering
+
+- [ ] Toggle to show/hide completed tasks
+- [ ] Archive management (archive/unarchive/view archive)
+- [ ] Display creation and modification dates
+- [ ] Support for due dates
+- [ ] Priority system (todo.txt style)
+- [ ] Interactive selection of todos by number
 
 ## GET /v1/todos
 
-- [ ] Implement search by context
-- [ ] Implement search by project
-- [ ] verify that all sort, filter, pagination options work
-- [ ] in readme, describe options for sorting, filtering, and pagination of GET request
-- [ ] implement additional query params for filtering.
-- [x] Implement search by text
+- [ ] Implement search by context (@context)
+- [ ] Implement search by project (+project)
+- [ ] Verify that all sort, filter, pagination options work
+- [ ] In readme, describe options for sorting, filtering, and pagination
+- [ ] Implement additional query params for filtering
 
-## Documentation
+## Todo Model
 
-- [ ] Specify the status codes for all responses
-
-## Todo model
-
-- [x] associate todos with a given user. Users will not see other users' todos.
-- [ ] implement and validate todo metadata for todo items
+- [ ] Implement and validate todo metadata
+- [ ] Add fields for:
+  - [ ] completion status
+  - [ ] creation date
+  - [ ] modification date
+  - [ ] due date
+  - [ ] priority
+  - [ ] archived status
+  - [ ] contexts (array)
+  - [ ] projects (array)
 
 ## Security Enhancements and Logging
 
+- [ ] Implement SSH authentication
 - [ ] Log suspicious patterns separately
 - [ ] Track repeated failed attempts
 - [x] Add rate limiting information
 
-## Error handling
+## Error Handling
 
-- [] cli should return authentication error responses appropriately. Try running an unauthorized command to see the problem.
+- [ ] CLI should return authentication error responses appropriately
 
 ## Configuration
 
@@ -40,8 +56,8 @@
 
 ## Development
 
-- [x] separate tokens for prod and dev
-- [x] increase token life for dev
+- [x] Separate tokens for prod and dev
+- [x] Increase token life for dev
 
 ## Deployment
 
