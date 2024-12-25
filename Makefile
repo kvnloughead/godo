@@ -232,3 +232,17 @@ cli/setup-local:
 ## cli/logs opens log files in your preferred editor
 cli/logs:
 	${EDITOR} ${HOME}/.config/godo/logs/app.log
+
+.PHONY: cli/config
+## cli/config opens the user's configuration directory in their preferred editor
+cli/config:
+	${EDITOR} ${HOME}/.config/godo
+
+.PHONY: token/delete
+## token/delete deletes the token file. Specify DEV=true to delete the development token file.
+token/delete:
+	@if [ "${DEV}" = "true" ]; then \
+		rm -f ${HOME}/.config/godo/.token.dev; \
+	else \
+		rm -f ${HOME}/.config/godo/.token; \
+	fi
