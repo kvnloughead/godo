@@ -69,20 +69,7 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 
 			displayTodos(todos)
 
-			fmt.Print("\nEnter command (? for help): ")
-			var input string
-			fmt.Scanln(&input)
-
-			if input == "q" || input == "quit" {
-				return
-			}
-
-			if input == "?" || input == "help" {
-				interactive.ShowHelp()
-				continue
-			}
-
-			if err := interactive.ExecuteCommand(input, todos); err != nil {
+			if err := interactive.Prompt(todos); err != nil {
 				fmt.Printf("Error: %v\n", err)
 			}
 		}

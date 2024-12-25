@@ -30,14 +30,41 @@ func New(config *config.Config, commands *Commands) *Mode {
 	}
 }
 
+func (m *Mode) Prompt(todos []types.Todo) error {
+	fmt.Print("Enter command (? for help): ")
+	var input string
+	fmt.Scanln(&input)
+
+	if input == "q" || input == "quit" {
+		return nil
+	}
+
+	if input == "?" || input == "help" {
+		m.ShowHelp()
+		return nil
+	}
+
+	return m.ExecuteCommand(input, todos)
+}
+
 // ExecuteCommand processes the user's input and executes the corresponding
 // action. It handles both shorthand commands and long-form commands.
 //
 // Available commands are described in ShowHelp().
 func (m *Mode) ExecuteCommand(input string, todos []types.Todo) error {
+	// If the input is a number that is less than 1 or greater than the
+	// number of todos, return an error. Otherwise, if the input is a
+	// shorthand command, execute it.
 	if num, cmd, ok := m.parseShorthand(input); ok {
-		return m.executeActionOnTodo(num, cmd, todos)
+		if num < 1 || num > len(todos) {
+			return fmt.Errorf("invalid todo number: %d", num)
+		}
+		if cmd != "" {
+			return m.executeActionOnTodo(num, cmd, todos)
+		}
 	}
+
+	// If the input is a long-form command, attempt to execute it.
 
 	parts := strings.Fields(input)
 	if len(parts) == 0 {
@@ -65,14 +92,24 @@ func (m *Mode) ExecuteCommand(input string, todos []types.Todo) error {
 // parsing was successful. Valid commands are: d (done), d- (undone), rm
 // (delete), a (archive), u (update)
 func (m *Mode) parseShorthand(input string) (int, string, bool) {
-	re := regexp.MustCompile(`^(\d+)(d|d-|rm|a|u)$`)
+	// If input is a number without a command, return it
+	re := regexp.MustCompile(`^\d+$`)
 	matches := re.FindStringSubmatch(input)
+	if matches != nil {
+		num, _ := strconv.Atoi(matches[0])
+		return num, "", true
+	}
+
+	// Check if input is a number followed by a command
+	re = regexp.MustCompile(`^(\d+)(d|d-|rm|a|u|done|undone|delete|archive|update)$`)
+	matches = re.FindStringSubmatch(input)
 	if matches == nil {
 		return 0, "", false
 	}
 
 	num, _ := strconv.Atoi(matches[1])
-	return num, matches[2], true
+	cmd := matches[2]
+	return num, cmd, true
 }
 
 // executeActionOnTodo executes the specified command on a todo item.
