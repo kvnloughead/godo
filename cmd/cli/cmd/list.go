@@ -72,7 +72,7 @@ about authentication.`,
 				"url", baseURL)
 		}
 
-		token, err := app.ReadTokenFromFile()
+		token, err := app.TokenManager.LoadToken()
 		if err != nil {
 			app.handleAuthenticationError("Failed to read token", err)
 			return

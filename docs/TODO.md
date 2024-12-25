@@ -9,6 +9,10 @@
 - [ ] Command to edit todos in preferred editor
 - [ ] Command to sync edited todos back to API
 
+### Refactoring
+
+- [] Handle activation tokens in token package
+
 ### Todo Listing and Filtering
 
 - [ ] Toggle to show/hide completed tasks

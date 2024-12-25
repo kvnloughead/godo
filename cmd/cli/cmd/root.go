@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/kvnloughead/godo/cmd/cli/config"
+	"github.com/kvnloughead/godo/cmd/cli/token"
 	"github.com/kvnloughead/godo/internal/logger"
 	"github.com/spf13/cobra"
 )
@@ -39,8 +41,9 @@ func init() {
 			os.Exit(1)
 		}
 		app = &CLIApplication{
-			Logger: logger,
-			Config: cliConfig,
+			Logger:       logger,
+			Config:       cliConfig,
+			TokenManager: token.NewManager(filepath.Join(os.Getenv("HOME"), ".config/godo"), cliConfig.APIBaseURL),
 		}
 	})
 }
@@ -57,8 +60,9 @@ type CLIConfig struct {
 }
 
 type CLIApplication struct {
-	Logger *slog.Logger
-	Config config.Config
+	Logger       *slog.Logger
+	Config       config.Config
+	TokenManager *token.Manager
 }
 
 func NewCLIApplication() (*CLIApplication, error) {
@@ -77,7 +81,8 @@ func NewCLIApplication() (*CLIApplication, error) {
 	}
 
 	return &CLIApplication{
-		Logger: logger,
-		Config: cliConfig,
+		Logger:       logger,
+		Config:       cliConfig,
+		TokenManager: token.NewManager(cliConfig.APIBaseURL, cliConfig.APIBaseURL),
 	}, nil
 }

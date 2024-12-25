@@ -6,13 +6,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"syscall"
 
-	"github.com/kvnloughead/godo/cmd/cli/token"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -138,9 +134,7 @@ Only an activated user can be authenticated. Run 'godo activate -h' for more inf
 		authToken := authResp.AuthenticationToken.Token
 
 		// Save token securely using token manager
-		isDev := strings.Contains(app.Config.APIBaseURL, "localhost")
-		tokenManager := token.NewManager(filepath.Join(os.Getenv("HOME"), ".config/godo"), isDev)
-		if err := tokenManager.SaveToken(authToken); err != nil {
+		if err := app.TokenManager.SaveToken(authToken); err != nil {
 			handleError("Failed to save token", err)
 			return
 		}
