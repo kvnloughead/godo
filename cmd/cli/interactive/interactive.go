@@ -2,6 +2,7 @@ package interactive
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"slices"
 	"strconv"
@@ -38,8 +39,9 @@ func (m *Mode) Prompt(todos []types.Todo) error {
 	var input string
 	fmt.Scanln(&input)
 
-	if input == "q" || input == "quit" {
-		return nil
+	if input == "q" || input == "quit" || input == "exit" {
+		fmt.Print("Exiting interactive mode.\n\n")
+		os.Exit(0)
 	}
 
 	if input == "?" || input == "help" {
