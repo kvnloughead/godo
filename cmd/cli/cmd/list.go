@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/kvnloughead/godo/cmd/cli/interactive"
@@ -56,10 +57,18 @@ Examples:
 This command requires authentication. Run 'godo auth -h' for more information.`,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		commands := &interactive.Commands{
-			Delete: DeleteCmd,
+		commands := map[string]*interactive.Commands{
+			"delete": {
+				Name:    "delete",
+				Aliases: []string{"rm", "del"},
+				Action: func(todoID int) error {
+					dummyCmd := &cobra.Command{}
+					DeleteCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					return nil
+				},
+			},
 		}
-		interactive := interactive.New(&app.Config, commands)
+		interactive := interactive.New(commands)
 
 		for {
 			todos, err := fetchTodos(args)
