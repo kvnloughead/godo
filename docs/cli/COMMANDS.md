@@ -68,18 +68,45 @@ godo add "Todo text here"
 
 ### `list`
 
-List all (or some) todo items. Supports simple text filtering. For example,
-`godo list "+work"` will list all todos containing the substring "+work" in the
-text.
+List all (or some) todo items. Supports simple text filtering and enters an interactive mode for managing todos.
 
-Todos are displayed in an interactive numbered list. You can interact with the
-list using the following commands:
+**Usage:**
 
-- `q` or `quit`: Exit the interactive list
-- `?` or `help`: Show help for the interactive list
-- `d` or `delete`: Delete the selected todo item
+```bash
+godo list [pattern]
+```
 
-More commands will be added in the future.
+**Arguments:**
+
+- `pattern`: Optional text to filter todos (e.g., "@phone" or "some task")
+
+**Interactive Mode Commands:**
+
+- `<number>`: Select a todo by its number
+- `<number>rm|del|delete`: Delete the selected todo
+- `<number>d|done`: Mark the selected todo as done
+- `<number>u|undone`: Mark the selected todo as not done
+- `<number>e|edit`: Edit the selected todo's text
+- `<number>a|archive`: Archive the selected todo
+
+**Other Commands:**
+
+- `?` or `help`: Show help for interactive mode
+- `q`, `quit`, or `exit`: Exit interactive mode
+
+**Examples:**
+
+````bash
+# List all todos
+godo list
+
+# List todos containing "@phone"
+godo list @phone
+
+# In interactive mode:
+1rm     # Delete todo #1
+2d      # Mark todo #2 as done
+3u      # Mark todo #3 as not done
 
 ### `delete`
 
@@ -94,3 +121,24 @@ godo delete [id]
 **Arguments:**
 
 - `id`: The ID of the todo to delete
+
+### `done`
+
+Mark a todo item as completed.
+
+**Usage:**
+
+```bash
+godo done [id]
+```
+
+### `undone`
+
+Mark a todo item as not completed.
+
+**Usage:**
+
+```bash
+godo undone [id]
+```
+````

@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -68,4 +71,22 @@ func (app *CLIApplication) handleAuthenticationError(logMsg string, err error, f
 		"\nError: failed to authenticate. \nCheck `~/.config/godo/logs` for details.\n",
 		err,
 		fields...)
+}
+
+// createJSONRequest creates a new HTTP request with the given method, URL, and
+// payload. It sets the Content-Type header to "application/json" and the
+// Authorization header to the token.
+func (app *CLIApplication) createJSONRequest(method, url string, payload interface{}) (*http.Request, error) {
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal JSON: %w", err)
+	}
+
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(jsonPayload))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	return req, nil
 }

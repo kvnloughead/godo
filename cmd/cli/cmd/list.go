@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -42,10 +43,19 @@ type PaginationData struct {
 var listCmd = &cobra.Command{
 	Use:   "list [pattern]",
 	Short: "List and manage todo items",
-	Long: `
-List and manage todo items for the authenticated user. Items can be filtered by 
-a plain text search pattern. If the pattern contains multiple words it must be 
+	Long: `List and manage todo items for the authenticated user. Items can be filtered by a plain text search pattern. If the pattern contains multiple words it must be 
 enclosed in quotes.
+
+The command enters an interactive mode where you can manage todos using these commands:
+  <number>rm|del|delete  Delete the selected todo
+  <number>d|done        Mark the selected todo as done
+  <number>u|undone      Mark the selected todo as not done
+  <number>e|edit        Edit the selected todo's text
+  <number>a|archive     Archive the selected todo
+
+Other commands:
+  ?        Show help
+  q        Exit interactive mode
 
 Examples:
     # List all todos
@@ -53,6 +63,11 @@ Examples:
 
     # List all todos with @phone in the text
     godo list @phone
+
+    # In interactive mode:
+    1rm     # Delete todo #1
+    2d      # Mark todo #2 as done
+    3u      # Mark todo #3 as not done
 
 This command requires authentication. Run 'godo auth -h' for more information.`,
 	Args: cobra.MaximumNArgs(1),
@@ -64,6 +79,24 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 				Action: func(todoID int) error {
 					dummyCmd := &cobra.Command{}
 					DeleteCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					return nil
+				},
+			},
+			"done": {
+				Name:    "done",
+				Aliases: []string{"d", "complete"},
+				Action: func(todoID int) error {
+					dummyCmd := &cobra.Command{}
+					doneCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					return nil
+				},
+			},
+			"undone": {
+				Name:    "undone",
+				Aliases: []string{"u", "undone", "undo", "incomplete"},
+				Action: func(todoID int) error {
+					dummyCmd := &cobra.Command{}
+					undoneCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
 					return nil
 				},
 			},
@@ -110,7 +143,7 @@ func fetchTodos(args []string) ([]types.Todo, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodGet, baseURL, nil)
+	req, err := app.createJSONRequest(http.MethodGet, baseURL, nil)
 	if err != nil {
 		return nil, handleError("Failed to create request", err)
 	}
@@ -146,12 +179,19 @@ func fetchTodos(args []string) ([]types.Todo, error) {
 
 func displayTodos(todos []types.Todo) {
 	fmt.Println("\nTodos:")
+
+	// Sort todos: incomplete first, then completed
+	sort.Slice(todos, func(i, j int) bool {
+		return !todos[i].Completed && todos[j].Completed
+	})
+
 	for i, todo := range todos {
-		status := " "
 		if todo.Completed {
-			status = "✓"
+			fmt.Printf("%2d. [\033[90m✓\033[0m] \033[90m%s\033[0m\n",
+				i+1, todo.Text)
+		} else {
+			fmt.Printf("%2d. [ ] %s\n", i+1, todo.Text)
 		}
-		fmt.Printf("%2d. [%s] %s\n", i+1, status, todo.Text)
 	}
 }
 

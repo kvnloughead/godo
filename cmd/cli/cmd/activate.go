@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -56,11 +55,6 @@ they register.`,
 		payload := map[string]string{
 			"token": activationToken,
 		}
-		jsonPayload, err := json.Marshal(payload)
-		if err != nil {
-			handleError("failed to marshal JSON", err)
-			return
-		}
 
 		// Log the request (excluding password)
 		app.Logger.Info("sending activation request",
@@ -68,7 +62,7 @@ they register.`,
 			"token", activationToken)
 
 		// Create request
-		req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(jsonPayload))
+		req, err := app.createJSONRequest(http.MethodPut, url, payload)
 		if err != nil {
 			handleError("failed to create request", err)
 			return

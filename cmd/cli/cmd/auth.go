@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -83,15 +82,8 @@ Only an activated user can be authenticated. Run 'godo activate -h' for more inf
 			"password": password,
 		}
 
-		// Marshal payload to JSON
-		jsonPayload, err := json.Marshal(payload)
-		if err != nil {
-			app.handleAuthenticationError("Failed to marshal JSON", err)
-			return
-		}
-
 		// Create request
-		req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonPayload))
+		req, err := app.createJSONRequest(http.MethodPost, url, payload)
 		if err != nil {
 			handleError("Failed to create request", err)
 			return

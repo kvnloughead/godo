@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -64,11 +63,6 @@ See 'godo activate -h' for more information.`,
 			"password": password,
 			"name":     name,
 		}
-		jsonPayload, err := json.Marshal(payload)
-		if err != nil {
-			handleError("failed to marshal JSON", err)
-			return
-		}
 
 		// Log the request (excluding password)
 		app.Logger.Info("sending registration request",
@@ -77,7 +71,7 @@ See 'godo activate -h' for more information.`,
 			"name", name)
 
 		// Create request
-		req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonPayload))
+		req, err := app.createJSONRequest(http.MethodPost, url, payload)
 		if err != nil {
 			handleError("failed to create request", err)
 			return

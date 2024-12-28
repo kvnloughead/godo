@@ -8,15 +8,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// doneCmd marks a todo item as completed.
-var doneCmd = &cobra.Command{
-	Use:   "done <id>",
-	Short: "Mark a todo item as completed",
+// undoneCmd marks a todo item as not completed.
+var undoneCmd = &cobra.Command{
+	Use:   "undone <ID>",
+	Short: "Mark a todo item as not completed",
 	Long: `
-Mark a todo item as completed. For example:
+Mark a todo item as not completed. For example:
 
-    # Mark todo #42 as completed
-    godo done 42
+    # Mark todo #42 as not completed
+    godo undone 42
 
 This command requires authentication. Run 'godo auth -h' for more information.`,
 	Args: cobra.ExactArgs(1),
@@ -28,7 +28,7 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 		}
 
 		url := fmt.Sprintf("%s/todos/%d", app.Config.APIBaseURL, id)
-		stdoutMsg := "\nError: failed to mark todo as completed. \nCheck `~/.config/godo/logs` for details.\n"
+		stdoutMsg := "\nError: failed to mark todo as not completed. \nCheck `~/.config/godo/logs` for details.\n"
 
 		handleError := func(logMsg string, err error) {
 			app.handleError(logMsg, stdoutMsg, err,
@@ -42,8 +42,8 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 			return
 		}
 
-		// Create the payload with completed = true
-		payload := map[string]bool{"completed": true}
+		// Create the payload with completed = false
+		payload := map[string]bool{"completed": false}
 
 		req, err := app.createJSONRequest(http.MethodPatch, url, payload)
 		if err != nil {
@@ -64,15 +64,15 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 			case http.StatusNotFound:
 				fmt.Println("Error: todo not found")
 			default:
-				handleError("Failed to mark todo as completed", fmt.Errorf("response status: %s", resp.Status))
+				handleError("Failed to mark todo as not completed", fmt.Errorf("response status: %s", resp.Status))
 			}
 			return
 		}
 
-		fmt.Println("Todo marked as completed")
+		fmt.Println("Todo marked as not completed")
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(doneCmd)
+	rootCmd.AddCommand(undoneCmd)
 }

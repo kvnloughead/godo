@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -41,13 +39,8 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 
 		text := args[0]
 		payload := map[string]string{"text": text}
-		jsonPayload, err := json.Marshal(payload)
-		if err != nil {
-			handleError("Failed to marshal JSON", err)
-			return
-		}
 
-		req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonPayload))
+		req, err := app.createJSONRequest(http.MethodPost, url, payload)
 		if err != nil {
 			handleError("Failed to create request", err)
 			return
