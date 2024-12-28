@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug non-interactive commands (godo cli)",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cmd/cli/main.go",
+      "args": ["add"] // Change this to the command you want to debug
+    },
+    {
+      "name": "Debug Interactive Mode (godo cli)",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cmd/cli/main.go",
+      "args": ["list"],
+      "console": "integratedTerminal"
+    }
+  ]
+}

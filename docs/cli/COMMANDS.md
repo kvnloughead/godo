@@ -68,13 +68,18 @@ godo add "Todo text here"
 
 ### `list`
 
-List all todo items.
+List all (or some) todo items. Supports simple text filtering. For example,
+`godo list "+work"` will list all todos containing the substring "+work" in the
+text.
 
-**Usage:**
+Todos are displayed in an interactive numbered list. You can interact with the
+list using the following commands:
 
-```bash
-godo list
-```
+- `q` or `quit`: Exit the interactive list
+- `?` or `help`: Show help for the interactive list
+- `d` or `delete`: Delete the selected todo item
+
+More commands will be added in the future.
 
 ### `delete`
 

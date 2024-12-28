@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// deleteCmd removes a todo item by its ID. Users can only delete their own todos. This command requires authentication.
-var deleteCmd = &cobra.Command{
+// DeleteCmd removes a todo item by its ID. Users can only delete their own todos. This command requires authentication.
+var DeleteCmd = &cobra.Command{
 	Use:   "delete <id>",
 	Short: "Delete a todo item by its ID",
 	Long: `
@@ -41,7 +41,7 @@ about authentication.`,
 				"url", url)
 		}
 
-		token, err := app.ReadTokenFromFile()
+		token, err := app.TokenManager.LoadToken()
 		if err != nil {
 			app.handleAuthenticationError("Failed to read token", err)
 			return
@@ -76,5 +76,5 @@ about authentication.`,
 }
 
 func init() {
-	rootCmd.AddCommand(deleteCmd)
+	rootCmd.AddCommand(DeleteCmd)
 }

@@ -9,6 +9,7 @@ package token
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -22,11 +23,12 @@ type Manager struct {
 	isDev     bool   // Whether the token is for development.
 }
 
-// NewManager creates a new Manager.
-func NewManager(configDir string, isDev bool) *Manager {
+// NewManager creates a new Manager. It determines whether the token is for
+// development based on the API base URL.
+func NewManager(configDir string, apiBaseURL string) *Manager {
 	return &Manager{
 		configDir: configDir,
-		isDev:     isDev,
+		isDev:     strings.Contains(apiBaseURL, "localhost"),
 	}
 }
 
