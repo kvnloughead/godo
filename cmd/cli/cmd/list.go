@@ -57,7 +57,7 @@ Examples:
 This command requires authentication. Run 'godo auth -h' for more information.`,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		commands := map[string]*interactive.Commands{
+		commands := map[string]*interactive.Command{
 			"delete": {
 				Name:    "delete",
 				Aliases: []string{"rm", "del"},

@@ -11,21 +11,24 @@ import (
 	"github.com/kvnloughead/godo/cmd/cli/types"
 )
 
-// Command represents a todo action
-type Commands struct {
-	Name    string   // e.g., "delete"
-	Aliases []string // e.g., ["rm", "del"]
-	Action  func(todoID int) error
+// Command represents an individual command.
+type Command struct {
+	// The long form of the command. e.g., "delete"
+	Name string
+	// The shorthand aliases for the command. e.g., ["rm", "del"]
+	Aliases []string
+	// The function to execute when the command is run.
+	Action func(todoID int) error
 }
 
 // Mode represents an interactive session
 type Mode struct {
-	commands map[string]*Commands
+	commands map[string]*Command
 	todos    []types.Todo
 }
 
 // New creates a new interactive mode with the predefined commands
-func New(commands map[string]*Commands) *Mode {
+func New(commands map[string]*Command) *Mode {
 	return &Mode{
 		commands: commands,
 	}
@@ -45,15 +48,15 @@ func (m *Mode) Prompt(todos []types.Todo) error {
 	}
 
 	if input == "?" || input == "help" {
-		m.ShowHelp()
+		m.showHelp()
 		return nil
 	}
 
-	return m.ExecuteCommand(input)
+	return m.executeCommand(input)
 }
 
-// ExecuteCommand handles both shorthand and longform commands
-func (m *Mode) ExecuteCommand(input string) error {
+// executeCommand handles both shorthand and longform commands
+func (m *Mode) executeCommand(input string) error {
 	num, cmd, err := m.parseInput(input)
 	if err != nil {
 		return fmt.Errorf("unknown command: %s", input)
@@ -111,8 +114,8 @@ func (m *Mode) execute(todoNum int, cmdStr string) error {
 	return fmt.Errorf("unknown command: %s", cmdStr)
 }
 
-// ShowHelp displays the available commands in interactive mode.
-func (m *Mode) ShowHelp() {
+// showHelp displays the available commands in interactive mode.
+func (m *Mode) showHelp() {
 	fmt.Println("\nUsage:")
 	fmt.Println("  Enter a number to select a todo, followed by a command to perform an action on it.")
 	fmt.Println("\nExamples:")
