@@ -20,7 +20,7 @@
 - [ ] Display creation and modification dates
 - [ ] Support for due dates
 - [ ] Priority system (todo.txt style)
-- [ ] Interactive selection of todos by number
+- [x] Interactive selection of todos by number
 
 ## GET /v1/todos
 
@@ -62,6 +62,16 @@
 
 - [x] Separate tokens for prod and dev
 - [x] Increase token life for dev
+
+## Interactive Mode
+
+- [ ] add pagination
+- [ ] add search
+- [ ] add sorting
+- [ ] add filtering
+- [ ] generate command help from command struct tags
+- [ ] add command history
+- [ ] add command completion
 
 ## Deployment
 

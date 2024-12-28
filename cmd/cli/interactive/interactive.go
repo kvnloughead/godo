@@ -1,3 +1,6 @@
+// Package interactive provides an interactive command-line interface for
+// managing items through commands and their aliases. It supports both shorthand
+// (e.g., "1rm") and longform command entry with command prompting.
 package interactive
 
 import (
@@ -11,7 +14,8 @@ import (
 	"github.com/kvnloughead/godo/cmd/cli/types"
 )
 
-// Command represents an individual command.
+// Command represents an action that can be performed on an item. Each command
+// hasa primary name, optional aliases, and an action function to execute.
 type Command struct {
 	// The long form of the command. e.g., "delete"
 	Name string
@@ -21,20 +25,34 @@ type Command struct {
 	Action func(todoID int) error
 }
 
-// Mode represents an interactive session
+// Mode manages an interactive session, holding the available commands
+// and current items being managed.
 type Mode struct {
 	commands map[string]*Command
 	todos    []types.Todo
 }
 
-// New creates a new interactive mode with the predefined commands
+// New creates a new interactive mode with the provided commands.
+// The commands map uses the command's Name as the key.
+//
+// Example:
+//
+//	interactive.New(map[string]*interactive.Command{
+//		"delete": {
+//			Name:    "delete",
+//			Aliases: []string{"rm", "del"},
+//			Action:  func(todoID int) error { return nil },
+//		},
+//	})
 func New(commands map[string]*Command) *Mode {
 	return &Mode{
 		commands: commands,
 	}
 }
 
-// Prompt is the main entry point for interactive mode
+// Prompt starts an interactive session, displaying the current items and
+// accepting user commands. It handles command parsing, validation, and
+// execution. Returns an error if command execution fails.
 func (m *Mode) Prompt(todos []types.Todo) error {
 	m.todos = todos
 
@@ -55,7 +73,9 @@ func (m *Mode) Prompt(todos []types.Todo) error {
 	return m.executeCommand(input)
 }
 
-// executeCommand handles both shorthand and longform commands
+// executeCommand handles both shorthand and longform commands. It parses the
+// input, validates the item number, and either executes the command directly or
+// prompts for one if none was provided.
 func (m *Mode) executeCommand(input string) error {
 	num, cmd, err := m.parseInput(input)
 	if err != nil {
@@ -73,7 +93,8 @@ func (m *Mode) executeCommand(input string) error {
 	return m.execute(num, cmd)
 }
 
-// parseInput handles both "2rm" style and plain number inputs
+// parseInput handles both "2rm" style and plain number inputs. It returns the
+// item number and command string, or an error if the input is invalid.
 func (m *Mode) parseInput(input string) (num int, cmd string, err error) {
 	re := regexp.MustCompile(`^(\d+)(.*)$`)
 	matches := re.FindStringSubmatch(input)
@@ -86,7 +107,9 @@ func (m *Mode) parseInput(input string) (num int, cmd string, err error) {
 	return num, cmd, nil
 }
 
-// promptForCommand asks user for a command and validates it
+// promptForCommand asks user for a command when only an item number was
+// provided. It displays available commands with their aliases and validates
+// the user's input.
 func (m *Mode) promptForCommand(todoNum int) error {
 	fmt.Println("\nAvailable commands:")
 	for _, cmd := range m.commands {
@@ -101,7 +124,9 @@ func (m *Mode) promptForCommand(todoNum int) error {
 	return m.execute(todoNum, cmd)
 }
 
-// execute runs the specified command on the todo
+// execute runs the specified command on the selected item. It checks both the
+// command name and its aliases to find a match. Returns an error if the command
+// is not recognized.
 func (m *Mode) execute(todoNum int, cmdStr string) error {
 	// First check aliases
 	for _, cmd := range m.commands {
