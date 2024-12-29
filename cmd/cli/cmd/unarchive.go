@@ -8,15 +8,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// doneCmd marks a todo item as completed.
-var archiveCmd = &cobra.Command{
-	Use:   "archive <id>",
-	Short: "Archive a todo item",
+// unarchiveCmd marks a todo item as not archived.
+var unarchiveCmd = &cobra.Command{
+	Use:   "unarchive <ID>",
+	Short: "Mark a todo item as not archived",
 	Long: `
-Archive a todo item. For example:
+Mark a todo item as not archived. For example:
 
-    # Archive todo number 42
-    godo archive 42
+    # Mark todo number 42 as not archived
+    godo unarchive 42
 
 This command requires authentication. Run 'godo auth -h' for more information.`,
 	Args: cobra.ExactArgs(1),
@@ -28,7 +28,7 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 		}
 
 		url := fmt.Sprintf("%s/todos/%d", app.Config.APIBaseURL, id)
-		stdoutMsg := "\nError: failed to archive todo. \nCheck `~/.config/godo/logs` for details.\n"
+		stdoutMsg := "\nError: failed to mark todo as not archived. \nCheck `~/.config/godo/logs` for details.\n"
 
 		handleError := func(logMsg string, err error) {
 			app.handleError(logMsg, stdoutMsg, err,
@@ -42,8 +42,8 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 			return
 		}
 
-		// Create the payload with completed = true
-		payload := map[string]bool{"archived": true}
+		// Create the payload with completed = false
+		payload := map[string]bool{"archived": false}
 
 		req, err := app.createJSONRequest(http.MethodPatch, url, payload)
 		if err != nil {
@@ -64,15 +64,15 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 			case http.StatusNotFound:
 				fmt.Println("Error: todo not found")
 			default:
-				handleError("Failed to archive todo", fmt.Errorf("response status: %s", resp.Status))
+				handleError("Failed to mark todo as not completed", fmt.Errorf("response status: %s", resp.Status))
 			}
 			return
 		}
 
-		fmt.Println("Todo marked as archived")
+		fmt.Println("Todo marked as not archived")
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(archiveCmd)
+	rootCmd.AddCommand(unarchiveCmd)
 }

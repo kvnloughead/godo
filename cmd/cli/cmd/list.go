@@ -52,6 +52,7 @@ The command enters an interactive mode where you can manage todos using these co
   <number>u|undone      Mark the selected todo as not done
   <number>e|edit        Edit the selected todo's text
   <number>a|archive     Archive the selected todo
+	<number>ua|unarchive  Unarchive the selected todo
 
 Other commands:
   ?        Show help
@@ -97,6 +98,24 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 				Action: func(todoID int) error {
 					dummyCmd := &cobra.Command{}
 					undoneCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					return nil
+				},
+			},
+			"archive": {
+				Name:    "archive",
+				Aliases: []string{"a"},
+				Action: func(todoID int) error {
+					dummyCmd := &cobra.Command{}
+					archiveCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					return nil
+				},
+			},
+			"unarchive": {
+				Name:    "unarchive",
+				Aliases: []string{"ua"},
+				Action: func(todoID int) error {
+					dummyCmd := &cobra.Command{}
+					unarchiveCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
 					return nil
 				},
 			},
