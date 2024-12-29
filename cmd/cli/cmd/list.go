@@ -79,6 +79,53 @@ Examples:
 This command requires authentication. Run 'godo auth -h' for more information.`,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		commands := map[string]*interactive.Command{
+			"delete": {
+				Name:    "delete",
+				Aliases: []string{"rm", "del"},
+				Action: func(todoID int) error {
+					dummyCmd := &cobra.Command{}
+					deleteCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					return nil
+				},
+			},
+			"done": {
+				Name:    "done",
+				Aliases: []string{"d", "complete"},
+				Action: func(todoID int) error {
+					dummyCmd := &cobra.Command{}
+					doneCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					return nil
+				},
+			},
+			"undone": {
+				Name:    "undone",
+				Aliases: []string{"u", "undone", "undo", "incomplete"},
+				Action: func(todoID int) error {
+					dummyCmd := &cobra.Command{}
+					undoneCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					return nil
+				},
+			},
+			"archive": {
+				Name:    "archive",
+				Aliases: []string{"a"},
+				Action: func(todoID int) error {
+					dummyCmd := &cobra.Command{}
+					archiveCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					return nil
+				},
+			},
+			"unarchive": {
+				Name:    "unarchive",
+				Aliases: []string{"ua"},
+				Action: func(todoID int) error {
+					dummyCmd := &cobra.Command{}
+					unarchiveCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					return nil
+				},
+			},
+		}
 		interactive := interactive.New(commands)
 
 		for {

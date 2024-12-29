@@ -30,11 +30,10 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 		url := fmt.Sprintf("%s/todos/%d", app.Config.APIBaseURL, id)
 		stdoutMsg := "\nError: failed to archive todo. \nCheck `~/.config/godo/logs` for details.\n"
 
-		handleError := func(logMsg string, err error) error {
+		handleError := func(logMsg string, err error) {
 			app.handleError(logMsg, stdoutMsg, err,
 				"method", http.MethodPatch,
 				"url", url)
-			return err
 		}
 
 		token, err := app.TokenManager.LoadToken()
@@ -59,12 +58,6 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 			return
 		}
 		defer resp.Body.Close()
-
-		// Read response body and log it
-		_, err = app.readResponse(resp, handleError)
-		if err != nil {
-			return
-		}
 
 		if resp.StatusCode != http.StatusOK {
 			switch resp.StatusCode {
