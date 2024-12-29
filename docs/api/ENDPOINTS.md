@@ -175,6 +175,7 @@ curl -X POST -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" -d '{ "text":
     "text": "(A) do something important @readme +godo",
     "priority": 0,
     "completed": false,
+    "archived": false,
     "version": 1
   }
 }

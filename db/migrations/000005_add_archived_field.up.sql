@@ -1,0 +1,2 @@
+ALTER TABLE todos 
+ADD COLUMN archived BOOLEAN NOT NULL DEFAULT false; 
