@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
 	"time"
 
@@ -274,6 +275,8 @@ func (m TodoModel) Delete(id int64) error {
 //
 //   - There can be a priority, a single character between A and Z, or an empty
 //     string.
+//
+//   - Archived and Completed must be booleans.
 func ValidateTodo(v *validator.Validator, t *Todo) {
 
 	v.Check(t.Text != "", "text", "must be provided")
@@ -287,6 +290,8 @@ func ValidateTodo(v *validator.Validator, t *Todo) {
 
 	v.Check(priorityIsValid(t), "priority", "must be a capital letter (A to Z) or empty string")
 
+	v.Check(reflect.TypeOf(t.Archived).Kind() == reflect.Bool, "archived", "must be boolean")
+	v.Check(reflect.TypeOf(t.Completed).Kind() == reflect.Bool, "completed", "must be boolean")
 }
 
 // priorityIsValid returns true if the todo item's priority field is valid.
