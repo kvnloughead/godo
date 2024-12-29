@@ -5,6 +5,7 @@
 bin/
 tmp
 
+db/backup/
 build/
 
 # godo binary for development

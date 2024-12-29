@@ -95,6 +95,14 @@ db/drop: confirm
 db/psql:
 	@psql ${DB_DSN}
 
+## db/backup: backup the database
+.PHONY: db/backup
+db/backup:
+	@echo 'Backing up database...'
+	@mkdir -p db/backup
+	@pg_dump ${DB_DSN} > db/backup/$(shell date +%Y-%m-%d-%H-%M-%S).sql
+	@echo 'Database backup complete.'
+
 ## db/migrations/new name=$1: generate new migration files
 .PHONY: db/migrations/new
 db/migrations/new:
@@ -106,6 +114,12 @@ db/migrations/new:
 db/migrations/up: confirm
 	@echo 'Running all up migrations'
 	migrate -path ./db/migrations -database ${DB_DSN} up
+
+## db/migrations/up/new: apply only new 'up' migrations
+.PHONY: db/migrations/up/new
+db/migrations/up/new: confirm
+	@echo 'Running new up migrations'
+	migrate -path ./db/migrations -database ${DB_DSN} up 1
 
 ## db/migrations/down: apply all 'down' migrations
 .PHONY: db/migrations/down
@@ -126,7 +140,6 @@ db/migrations/clean: confirm
 	@decremented_version=$$((${version}-1)); \
 	echo "Using version $${decremented_version}"; \
 	migrate -path ./db/migrations -database ${DB_DSN} force $${decremented_version}
-
 
 # ============================================================
 # BUILD MANAGEMENT
