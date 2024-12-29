@@ -149,6 +149,7 @@ func (m *Mode) showHelp() {
 	fmt.Println("  1d-|1undone will mark todo 1 as not done")
 	fmt.Println("  1u|1update will update the text of todo 1")
 	fmt.Println("  1a|1archive will archive todo 1")
+	fmt.Println("  1ua|1unarchive will unarchive todo 1")
 	fmt.Println("\nOther Commands:")
 	fmt.Println("  ?        Show this help")
 	fmt.Println("  q        Quit")

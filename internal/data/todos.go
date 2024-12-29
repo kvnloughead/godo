@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
 	"time"
 
@@ -24,6 +25,7 @@ type Todo struct {
 	Priority  string    `json:"priority"`
 	Completed bool      `json:"completed"`
 	Version   int32     `json:"version"`
+	Archived  bool      `json:"archived"`
 }
 
 // NilToSlices converts the calling structs Contexts and Projects fields to
@@ -62,7 +64,7 @@ func (m TodoModel) GetAll(text string, userID int64, contexts []string, projects
 	query := fmt.Sprintf(` 
 		SELECT 
 			count(*) OVER(),
-			id, created_at, text, contexts, projects, priority, completed, version
+			id, created_at, text, contexts, projects, priority, completed, archived, version
 		FROM todos
 		WHERE text ILIKE '%%' || $1 || '%%'
 		AND user_id = $2
@@ -96,6 +98,7 @@ func (m TodoModel) GetAll(text string, userID int64, contexts []string, projects
 			pq.Array(&m.Projects),
 			&m.Priority,
 			&m.Completed,
+			&m.Archived,
 			&m.Version,
 		)
 		if err != nil {
@@ -121,8 +124,8 @@ func (m TodoModel) Insert(todo *Todo) error {
 	// The query returns the system-generated id, created_at, and version fields
 	// so that we can assign them to the todo struct argument.
 	query := `
-		INSERT INTO todos (text, user_id, contexts, projects, priority, completed)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO todos (text, user_id, contexts, projects, priority, completed, archived)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id, created_at, version`
 
 	todo.NilToSlices()
@@ -130,7 +133,7 @@ func (m TodoModel) Insert(todo *Todo) error {
 	// The args slice contains the fields provided in the todo struct arguement.
 	// Note that we are converting the string slice todo.Contexts to an array the
 	// is compatible with the contexts field's text[] type.
-	args := []any{todo.Text, todo.UserID, pq.Array(todo.Contexts), pq.Array(todo.Projects), todo.Priority, todo.Completed}
+	args := []any{todo.Text, todo.UserID, pq.Array(todo.Contexts), pq.Array(todo.Projects), todo.Priority, todo.Completed, todo.Archived}
 
 	ctx, cancel := CreateTimeoutContext(QueryTimeout)
 	defer cancel()
@@ -153,7 +156,7 @@ func (m TodoModel) GetTodoIfOwned(id, userID int64) (*Todo, error) {
 	}
 
 	query := `
-		SELECT id, user_id, created_at, text, contexts, projects, priority, completed, version
+		SELECT id, user_id, created_at, text, contexts, projects, priority, completed, archived, version
 		FROM todos WHERE ID = $1 AND user_id = $2`
 
 	var todo Todo
@@ -170,6 +173,7 @@ func (m TodoModel) GetTodoIfOwned(id, userID int64) (*Todo, error) {
 		pq.Array(&todo.Projects),
 		&todo.Priority,
 		&todo.Completed,
+		&todo.Archived,
 		&todo.Version,
 	)
 
@@ -195,8 +199,8 @@ func (m TodoModel) GetTodoIfOwned(id, userID int64) (*Todo, error) {
 func (m TodoModel) Update(todo *Todo) error {
 	query := `
 		UPDATE todos
-		SET text = $1, contexts = $2, projects = $3, priority = $4, completed = $5, version = version + 1
-		WHERE id = $6 AND version = $7
+		SET text = $1, contexts = $2, projects = $3, priority = $4, completed = $5, archived = $6, version = version + 1
+		WHERE id = $7 AND version = $8
 		RETURNING version`
 
 	args := []any{
@@ -205,6 +209,7 @@ func (m TodoModel) Update(todo *Todo) error {
 		pq.Array(todo.Projects),
 		todo.Priority,
 		todo.Completed,
+		todo.Archived,
 		todo.ID,
 		todo.Version,
 	}
@@ -270,6 +275,8 @@ func (m TodoModel) Delete(id int64) error {
 //
 //   - There can be a priority, a single character between A and Z, or an empty
 //     string.
+//
+//   - Archived and Completed must be booleans.
 func ValidateTodo(v *validator.Validator, t *Todo) {
 
 	v.Check(t.Text != "", "text", "must be provided")
@@ -283,6 +290,8 @@ func ValidateTodo(v *validator.Validator, t *Todo) {
 
 	v.Check(priorityIsValid(t), "priority", "must be a capital letter (A to Z) or empty string")
 
+	v.Check(reflect.TypeOf(t.Archived).Kind() == reflect.Bool, "archived", "must be boolean")
+	v.Check(reflect.TypeOf(t.Completed).Kind() == reflect.Bool, "completed", "must be boolean")
 }
 
 // priorityIsValid returns true if the todo item's priority field is valid.

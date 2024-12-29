@@ -85,6 +85,7 @@ func (app *APIApplication) createTodo(w http.ResponseWriter, r *http.Request) {
 		Projects  []string `json:"projects"`
 		Priority  string   `json:"priority"`
 		Completed bool     `json:"completed"`
+		Archived  bool     `json:"archived"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -100,6 +101,7 @@ func (app *APIApplication) createTodo(w http.ResponseWriter, r *http.Request) {
 		Projects:  input.Projects,
 		Priority:  input.Priority,
 		Completed: input.Completed,
+		Archived:  input.Archived,
 	}
 
 	v := validator.New()
@@ -195,6 +197,7 @@ func (app *APIApplication) updateTodo(w http.ResponseWriter, r *http.Request) {
 		Projects  *[]string `json:"projects"`
 		Priority  *string   `json:"priority"`
 		Completed *bool     `json:"completed"`
+		Archived  *bool     `json:"archived"`
 	}
 
 	// Read JSON from request body into the input struct.
@@ -219,6 +222,9 @@ func (app *APIApplication) updateTodo(w http.ResponseWriter, r *http.Request) {
 	}
 	if input.Completed != nil {
 		todo.Completed = *input.Completed
+	}
+	if input.Archived != nil {
+		todo.Archived = *input.Archived
 	}
 
 	// Validate the updated todo record, or return a 422 response.

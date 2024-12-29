@@ -30,6 +30,7 @@ type PaginationData struct {
 // 	Text      string `json:"text"`
 // 	Priority  string `json:"priority"`
 // 	Completed bool   `json:"completed"`
+// 	Archived  bool   `json:"archived"`
 // 	Version   int    `json:"version"`
 // }
 
@@ -52,6 +53,7 @@ The command enters an interactive mode where you can manage todos using these co
   <number>u|undone      Mark the selected todo as not done
   <number>e|edit        Edit the selected todo's text
   <number>a|archive     Archive the selected todo
+	<number>ua|unarchive  Unarchive the selected todo
 
 Other commands:
   ?        Show help
@@ -97,6 +99,24 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 				Action: func(todoID int) error {
 					dummyCmd := &cobra.Command{}
 					undoneCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					return nil
+				},
+			},
+			"archive": {
+				Name:    "archive",
+				Aliases: []string{"a"},
+				Action: func(todoID int) error {
+					dummyCmd := &cobra.Command{}
+					archiveCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					return nil
+				},
+			},
+			"unarchive": {
+				Name:    "unarchive",
+				Aliases: []string{"ua"},
+				Action: func(todoID int) error {
+					dummyCmd := &cobra.Command{}
+					unarchiveCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
 					return nil
 				},
 			},
@@ -180,12 +200,19 @@ func fetchTodos(args []string) ([]types.Todo, error) {
 func displayTodos(todos []types.Todo) {
 	fmt.Println("\nTodos:")
 
-	// Sort todos: incomplete first, then completed
+	// Sort todos by archived status (unarchived first) and completion status
+	// (incomplete first). This prevents gaps in the displayed todo numbers.
 	sort.Slice(todos, func(i, j int) bool {
-		return !todos[i].Completed && todos[j].Completed
+		if todos[i].Archived != todos[j].Archived {
+			return !todos[i].Archived
+		}
+		return !todos[i].Completed
 	})
 
 	for i, todo := range todos {
+		if todo.Archived {
+			continue
+		}
 		if todo.Completed {
 			fmt.Printf("%2d. [\033[90m✓\033[0m] \033[90m%s\033[0m\n",
 				i+1, todo.Text)
