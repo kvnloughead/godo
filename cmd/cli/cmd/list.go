@@ -35,15 +35,6 @@ func interactiveCmd(cmdName string, aliases []string, cmd *cobra.Command) *inter
 	}
 }
 
-// commands is a map of interactive commands for managing todos.
-var commands = map[string]*interactive.Command{
-	"delete":    interactiveCmd("delete", []string{"rm", "del"}, deleteCmd),
-	"done":      interactiveCmd("done", []string{"d", "complete"}, doneCmd),
-	"undone":    interactiveCmd("undone", []string{"u", "undo", "incomplete"}, undoneCmd),
-	"archive":   interactiveCmd("archive", []string{"a"}, archiveCmd),
-	"unarchive": interactiveCmd("unarchive", []string{"ua"}, unarchiveCmd),
-}
-
 // listCmd displays todos and enters an interactive mode for managing them.
 // Results can be filtered by a plain text search pattern.
 var listCmd = &cobra.Command{
