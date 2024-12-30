@@ -30,6 +30,7 @@ type PaginationData struct {
 // 	Text      string `json:"text"`
 // 	Priority  string `json:"priority"`
 // 	Completed bool   `json:"completed"`
+// 	Archived  bool   `json:"archived"`
 // 	Version   int    `json:"version"`
 // }
 
@@ -199,12 +200,19 @@ func fetchTodos(args []string) ([]types.Todo, error) {
 func displayTodos(todos []types.Todo) {
 	fmt.Println("\nTodos:")
 
-	// Sort todos: incomplete first, then completed
+	// Sort todos by archived status (unarchived first) and completion status
+	// (incomplete first). This prevents gaps in the displayed todo numbers.
 	sort.Slice(todos, func(i, j int) bool {
-		return !todos[i].Completed && todos[j].Completed
+		if todos[i].Archived != todos[j].Archived {
+			return !todos[i].Archived
+		}
+		return !todos[i].Completed
 	})
 
 	for i, todo := range todos {
+		if todo.Archived {
+			continue
+		}
 		if todo.Completed {
 			fmt.Printf("%2d. [\033[90m✓\033[0m] \033[90m%s\033[0m\n",
 				i+1, todo.Text)
