@@ -35,41 +35,45 @@ func interactiveCmd(cmdName string, aliases []string, cmd *cobra.Command) *inter
 	}
 }
 
-// listCmd displays todos and enters an interactive mode for managing them.
-// Results can be filtered by a plain text search pattern.
+// listCmd displays todos and can be filtered by a plain text search pattern.
+// By default, the command enters an interactive mode. With the --plain flag
+// set, the todos are output in plain text.
 var listCmd = &cobra.Command{
-	Use:   "list [pattern]",
+	Use:   "list [--all|--archived|--unarchived|--done|--undone|--plain] [pattern]",
 	Short: "List and manage todo items",
-	Long: `List and manage todo items for the authenticated user. Items can be filtered by a plain text search pattern. If the pattern contains multiple words it must be 
-enclosed in quotes.
+	Long: `List and manage todo items for the authenticated user.
 
-The command enters an interactive mode where you can manage todos using these commands:
-  <number>rm|del|delete  Delete the selected todo
-  <number>d|done        Mark the selected todo as done
-  <number>u|undone      Mark the selected todo as not done
-  <number>e|edit        Edit the selected todo's text
-  <number>a|archive     Archive the selected todo
-	<number>ua|unarchive  Unarchive the selected todo
+Items can be filtered by a plain text search pattern. If the pattern contains multiple words it must be enclosed in quotes.
 
-Other commands:
-  ?        Show help
-  q        Exit interactive mode
+The --plain flag outputs the todos in plain text format suitable for scripts and piping to other commands. The output has the following columns:
+
+  - id: the todo ID
+  - completed: the todo completion status
+  - text: the todo text
+
+Without the --plain flag, the command enters an interactive mode. To see the
+available commands, run 'godo list' and press '?'.
 
 Examples:
-    # List all todos
-    godo list
+    # List unarchived todos in plain text format
+    godo list --plain
 
-    # List all todos with @phone in the text
+    # List unarchived todos with @phone in the text in interactive mode
     godo list @phone
 
-    # In interactive mode:
-    1rm     # Delete todo #1
-    2d      # Mark todo #2 as done
-    3u      # Mark todo #3 as not done
+    # List all todos (including archived) in interactive mode
+    godo list --all
+
+		# List only archived and uncompleted todos
+		godo list --archived --undone
 
 This command requires authentication. Run 'godo auth -h' for more information.`,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		// Get flags.
+		plain, _ := cmd.Flags().GetBool("plain")
+
+		// Set up interactive commands.
 		commands := map[string]*interactive.Command{
 			"delete": {
 				Name:    "delete",
@@ -119,13 +123,20 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 		}
 		interactive := interactive.New(commands)
 
+		// Fetch todos and display them. If plain mode is enabled, the loop
+		// will exit after the todos are displayed. Otherwise, the loop will
+		// continue until the user exits interactive mode.
 		for {
 			todos, err := fetchTodos(args)
 			if err != nil {
 				return
 			}
 
-			displayTodos(todos)
+			displayTodos(todos, plain)
+
+			if plain {
+				break
+			}
 
 			if err := interactive.Prompt(todos); err != nil {
 				fmt.Printf("Error: %v\n", err)
@@ -194,9 +205,17 @@ func fetchTodos(args []string) ([]types.Todo, error) {
 	return todoResponse.Todos, nil
 }
 
-func displayTodos(todos []types.Todo) {
-	fmt.Println("\nTodos:")
-
+// displayTodos outputs todos in either plain text or interactive mode. In plain
+// text mode, the output is suitable for scripts and piping to other commands.
+// It has the following columns:
+//
+//   - id: the todo ID
+//   - completed: the todo completion status
+//   - text: the todo text
+//
+// In interactive mode, the output is formatted for use with the interactive //
+// package.
+func displayTodos(todos []types.Todo, plain bool) {
 	// Sort todos by archived status (unarchived first) and completion status
 	// (incomplete first). This prevents gaps in the displayed todo numbers.
 	sort.Slice(todos, func(i, j int) bool {
@@ -206,19 +225,34 @@ func displayTodos(todos []types.Todo) {
 		return !todos[i].Completed
 	})
 
-	for i, todo := range todos {
-		if todo.Archived {
-			continue
+	// Output in plain text mode
+	if plain {
+		fmt.Println("id\tcompleted\ttext")
+		for _, todo := range todos {
+			if todo.Archived {
+				continue
+			}
+			fmt.Printf("%d\t%t\t\t%s\n", todo.ID, todo.Completed, todo.Text)
 		}
-		if todo.Completed {
-			fmt.Printf("%2d. [\033[90m✓\033[0m] \033[90m%s\033[0m\n",
-				i+1, todo.Text)
-		} else {
-			fmt.Printf("%2d. [ ] %s\n", i+1, todo.Text)
+		// Output in interactive mode
+	} else {
+		fmt.Println("\nTodos:")
+		for i, todo := range todos {
+			if todo.Archived {
+				continue
+			}
+			if todo.Completed {
+				fmt.Printf("%2d. [\033[90m✓\033[0m] \033[90m%s\033[0m\n",
+					i+1, todo.Text)
+			} else {
+				fmt.Printf("%2d. [ ] %s\n", i+1, todo.Text)
+			}
 		}
 	}
 }
 
 func init() {
 	rootCmd.AddCommand(listCmd)
+
+	listCmd.Flags().BoolP("plain", "p", false, "output in plain text to stdout")
 }
