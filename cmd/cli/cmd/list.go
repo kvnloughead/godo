@@ -15,29 +15,35 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type PaginationData struct {
-	CurrentPage  int `json:"current_page"`
-	PageSize     int `json:"page_size"`
-	FirstPage    int `json:"first_page"`
-	LastPage     int `json:"last_page"`
-	TotalRecords int `json:"total_records"`
+// interactiveCmd creates an interactive command struct. It accepts a command
+// name, aliases, and the actual command to run. The command to be executed is
+// wrapped in a dummy command so that it can be executed in interactive mode.
+//
+// Interactive commands are logged to the log file, but not until the interactive
+// interactive mode is exited.
+func interactiveCmd(cmdName string, aliases []string, cmd *cobra.Command) *interactive.Command {
+	return &interactive.Command{
+		Name:    cmdName,
+		Aliases: aliases,
+		Action: func(todoID int) error {
+			app.Logger.Info("executing interactive command",
+				"command", cmdName,
+				"todo_id", todoID)
+			dummyCmd := &cobra.Command{}
+			cmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+			return nil
+		},
+	}
 }
 
-// type Todo struct {
-// 	ID        int    `json:"id"`
-// 	UserID    int    `json:"user_id"`
-// 	CreatedAt string `json:"created_at"`
-// 	Text      string `json:"text"`
-// 	Priority  string `json:"priority"`
-// 	Completed bool   `json:"completed"`
-// 	Archived  bool   `json:"archived"`
-// 	Version   int    `json:"version"`
-// }
-
-// type TodoResponse struct {
-// 	PaginationData PaginationData `json:"paginationData"`
-// 	Todos          []Todo         `json:"todos"`
-// }
+// commands is a map of interactive commands for managing todos.
+var commands = map[string]*interactive.Command{
+	"delete":    interactiveCmd("delete", []string{"rm", "del"}, deleteCmd),
+	"done":      interactiveCmd("done", []string{"d", "complete"}, doneCmd),
+	"undone":    interactiveCmd("undone", []string{"u", "undo", "incomplete"}, undoneCmd),
+	"archive":   interactiveCmd("archive", []string{"a"}, archiveCmd),
+	"unarchive": interactiveCmd("unarchive", []string{"ua"}, unarchiveCmd),
+}
 
 // listCmd displays todos and enters an interactive mode for managing them.
 // Results can be filtered by a plain text search pattern.
@@ -74,53 +80,6 @@ Examples:
 This command requires authentication. Run 'godo auth -h' for more information.`,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		commands := map[string]*interactive.Command{
-			"delete": {
-				Name:    "delete",
-				Aliases: []string{"rm", "del"},
-				Action: func(todoID int) error {
-					dummyCmd := &cobra.Command{}
-					DeleteCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
-					return nil
-				},
-			},
-			"done": {
-				Name:    "done",
-				Aliases: []string{"d", "complete"},
-				Action: func(todoID int) error {
-					dummyCmd := &cobra.Command{}
-					doneCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
-					return nil
-				},
-			},
-			"undone": {
-				Name:    "undone",
-				Aliases: []string{"u", "undone", "undo", "incomplete"},
-				Action: func(todoID int) error {
-					dummyCmd := &cobra.Command{}
-					undoneCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
-					return nil
-				},
-			},
-			"archive": {
-				Name:    "archive",
-				Aliases: []string{"a"},
-				Action: func(todoID int) error {
-					dummyCmd := &cobra.Command{}
-					archiveCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
-					return nil
-				},
-			},
-			"unarchive": {
-				Name:    "unarchive",
-				Aliases: []string{"ua"},
-				Action: func(todoID int) error {
-					dummyCmd := &cobra.Command{}
-					unarchiveCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
-					return nil
-				},
-			},
-		}
 		interactive := interactive.New(commands)
 
 		for {
