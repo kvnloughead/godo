@@ -43,7 +43,7 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 		}
 
 		// Create the payload with completed = true
-		payload := map[string]bool{"archived": true}
+		payload := map[string]interface{}{"archived": true}
 
 		req, err := app.createJSONRequest(http.MethodPatch, url, payload)
 		if err != nil {

@@ -77,7 +77,7 @@ Only an activated user can be authenticated. Run 'godo activate -h' for more inf
 				"url", url)
 		}
 		// Prepare JSON payload from args
-		payload := map[string]string{
+		payload := map[string]interface{}{
 			"email":    email,
 			"password": password,
 		}

@@ -58,20 +58,14 @@ See 'godo activate -h' for more information.`,
 		}
 
 		// Prepare JSON payload
-		payload := map[string]string{
+		payload := map[string]interface{}{
 			"email":    email,
 			"password": password,
 			"name":     name,
 		}
 
-		// Log the request (excluding password)
-		app.Logger.Info("sending registration request",
-			"url", url,
-			"email", email,
-			"name", name)
-
-		// Create request
-		req, err := app.createJSONRequest(http.MethodPost, url, payload)
+		// Create request. The password will be omitted from the log.
+		req, err := app.createJSONRequest(http.MethodPost, url, payload, "password")
 		if err != nil {
 			handleError("failed to create request", err)
 			return

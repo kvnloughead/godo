@@ -52,7 +52,7 @@ they register.`,
 		}
 
 		// Prepare JSON payload
-		payload := map[string]string{
+		payload := map[string]interface{}{
 			"token": activationToken,
 		}
 

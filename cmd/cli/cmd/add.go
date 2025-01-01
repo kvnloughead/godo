@@ -38,7 +38,7 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 		}
 
 		text := args[0]
-		payload := map[string]string{"text": text}
+		payload := map[string]interface{}{"text": text}
 
 		req, err := app.createJSONRequest(http.MethodPost, url, payload)
 		if err != nil {

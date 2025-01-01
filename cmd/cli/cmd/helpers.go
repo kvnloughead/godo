@@ -76,7 +76,26 @@ func (app *CLIApplication) handleAuthenticationError(logMsg string, err error, f
 // createJSONRequest creates a new HTTP request with the given method, URL, and
 // payload. It sets the Content-Type header to "application/json" and the
 // Authorization header to the token.
-func (app *CLIApplication) createJSONRequest(method, url string, payload interface{}) (*http.Request, error) {
+//
+// It also logs the request method, url, and payload. If any additional string
+// arguments are provided (i.e. excludeFields), they are removed from the
+// payload before logging.
+func (app *CLIApplication) createJSONRequest(method, url string, payload map[string]interface{}, excludeFields ...string) (*http.Request, error) {
+	// Log the request (omitting sensitive fields)
+	if payload != nil {
+		logPayload := make(map[string]interface{})
+		for k, v := range payload {
+			logPayload[k] = v
+		}
+		for _, field := range excludeFields {
+			delete(logPayload, field)
+		}
+		app.Logger.Info("sending request",
+			"method", method,
+			"url", url,
+			"payload", logPayload)
+	}
+
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal JSON: %w", err)
