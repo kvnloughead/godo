@@ -13,6 +13,7 @@ import (
 	"github.com/kvnloughead/godo/cmd/cli/token"
 	"github.com/kvnloughead/godo/internal/logger"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // rootCmd is the base command for the godo CLI. It provides a way to manage
@@ -30,7 +31,29 @@ var (
 
 func init() {
 	// First, set up the flags
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.config/godo/settings.json)")
+	rootCmd.PersistentFlags().StringVarP(
+		&cfgFile,
+		"config",
+		"c",
+		"",
+		"config file (default is $HOME/.config/godo/settings.json)",
+	)
+
+	// Log the command, its arguments, and all flags and their values
+	// (excluding password).
+	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		flags := make(map[string]string)
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			if f.Name != "password" && f.Value.String() != "" {
+				flags[f.Name] = f.Value.String()
+			}
+		})
+		app.Logger.Info("executing command",
+			"command", cmd.Name(),
+			"args", args,
+			"flags", flags)
+		return nil
+	}
 
 	// Then initialize the application
 	cobra.OnInitialize(func() {
