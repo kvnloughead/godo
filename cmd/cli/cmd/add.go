@@ -25,10 +25,11 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 		stdoutMsg := "\nError: failed to add todo item. \nCheck `~/.config/godo/logs` for details.\n"
 
 		// handleError captures parameters that are common to all errors
-		handleError := func(logMsg string, err error) {
+		handleError := func(logMsg string, err error) error {
 			app.handleError(logMsg, stdoutMsg, err,
 				"method", http.MethodPost,
 				"url", url)
+			return err
 		}
 
 		token, err := app.TokenManager.LoadToken()
@@ -38,7 +39,7 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 		}
 
 		text := args[0]
-		payload := map[string]string{"text": text}
+		payload := map[string]any{"text": text}
 
 		req, err := app.createJSONRequest(http.MethodPost, url, payload)
 		if err != nil {
@@ -54,6 +55,12 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 			return
 		}
 		defer resp.Body.Close()
+
+		// Read response body and log it
+		_, err = app.readResponse(resp, handleError)
+		if err != nil {
+			return
+		}
 
 		if resp.StatusCode != http.StatusCreated {
 			handleError("Failed to add todo", fmt.Errorf("response status: %s", resp.Status))

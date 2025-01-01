@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// DeleteCmd removes a todo item by its ID. Users can only delete their own todos. This command requires authentication.
-var DeleteCmd = &cobra.Command{
+// deleteCmd removes a todo item by its ID. Users can only delete their own todos. This command requires authentication.
+var deleteCmd = &cobra.Command{
 	Use:   "delete <id>",
 	Short: "Delete a todo item by its ID",
 	Long: `
@@ -35,10 +35,11 @@ about authentication.`,
 		stdoutMsg := "\nError: failed to delete todo item. \nCheck `~/.config/godo/logs` for details.\n"
 
 		// handleError captures parameters that are common to all errors
-		handleError := func(logMsg string, err error) {
+		handleError := func(logMsg string, err error) error {
 			app.handleError(logMsg, stdoutMsg, err,
 				"method", http.MethodDelete,
 				"url", url)
+			return err
 		}
 
 		token, err := app.TokenManager.LoadToken()
@@ -61,6 +62,12 @@ about authentication.`,
 		}
 		defer resp.Body.Close()
 
+		// Read response body and log it
+		_, err = app.readResponse(resp, handleError)
+		if err != nil {
+			return
+		}
+
 		if resp.StatusCode != http.StatusOK {
 			switch resp.StatusCode {
 			case http.StatusNotFound:
@@ -76,5 +83,5 @@ about authentication.`,
 }
 
 func init() {
-	rootCmd.AddCommand(DeleteCmd)
+	rootCmd.AddCommand(deleteCmd)
 }

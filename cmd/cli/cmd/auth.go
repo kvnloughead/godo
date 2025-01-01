@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	"syscall"
@@ -71,13 +70,14 @@ Only an activated user can be authenticated. Run 'godo activate -h' for more inf
 
 		// Define a helper function that captures the parameters that are common to
 		// all errors
-		handleError := func(msg string, err error) {
+		handleError := func(msg string, err error) error {
 			app.handleAuthenticationError(msg, err,
 				"method", http.MethodPost,
 				"url", url)
+			return err
 		}
 		// Prepare JSON payload from args
-		payload := map[string]string{
+		payload := map[string]any{
 			"email":    email,
 			"password": password,
 		}
@@ -97,13 +97,12 @@ Only an activated user can be authenticated. Run 'godo activate -h' for more inf
 			return
 		}
 
-		// Handle response
-		defer resp.Body.Close()
-		body, err := io.ReadAll(resp.Body)
+		// Read response body and log it
+		body, err := app.readResponse(resp, handleError)
 		if err != nil {
-			handleError("Failed to read response body", err)
 			return
 		}
+		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusCreated {
 			handleError(fmt.Sprintf("Failed to authenticate: %s", string(body)), nil)

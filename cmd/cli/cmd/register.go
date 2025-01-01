@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/spf13/cobra"
@@ -49,29 +48,24 @@ See 'godo activate -h' for more information.`,
 		url := app.Config.APIBaseURL + "/users"
 
 		// Define error handler
-		handleError := func(msg string, err error) {
+		handleError := func(msg string, err error) error {
 			app.Logger.Error(msg,
 				"error", err,
 				"method", http.MethodPost,
 				"url", url)
 			fmt.Println("Error: Registration failed. Check logs for details.")
+			return err
 		}
 
 		// Prepare JSON payload
-		payload := map[string]string{
+		payload := map[string]any{
 			"email":    email,
 			"password": password,
 			"name":     name,
 		}
 
-		// Log the request (excluding password)
-		app.Logger.Info("sending registration request",
-			"url", url,
-			"email", email,
-			"name", name)
-
-		// Create request
-		req, err := app.createJSONRequest(http.MethodPost, url, payload)
+		// Create request. The password will be omitted from the log.
+		req, err := app.createJSONRequest(http.MethodPost, url, payload, "password")
 		if err != nil {
 			handleError("failed to create request", err)
 			return
@@ -86,17 +80,11 @@ See 'godo activate -h' for more information.`,
 		}
 		defer resp.Body.Close()
 
-		// Read response body
-		body, err := io.ReadAll(resp.Body)
+		// Read response body and log it
+		body, err := app.readResponse(resp, handleError)
 		if err != nil {
-			handleError("failed to read response body", err)
 			return
 		}
-
-		// Log the response (before processing)
-		app.Logger.Info("received response",
-			"status", resp.Status,
-			"body", string(body))
 
 		// Handle different status codes
 		switch resp.StatusCode {

@@ -72,6 +72,7 @@
 - [ ] generate command help from command struct tags
 - [ ] add command history
 - [ ] add command completion
+- [ ] log commands immediately, not after interactive mode is exited
 
 ## Deployment
 

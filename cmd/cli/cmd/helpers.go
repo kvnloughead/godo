@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -76,7 +77,26 @@ func (app *CLIApplication) handleAuthenticationError(logMsg string, err error, f
 // createJSONRequest creates a new HTTP request with the given method, URL, and
 // payload. It sets the Content-Type header to "application/json" and the
 // Authorization header to the token.
-func (app *CLIApplication) createJSONRequest(method, url string, payload interface{}) (*http.Request, error) {
+//
+// It also logs the request method, url, and payload. If any additional string
+// arguments are provided (i.e. excludeFields), they are removed from the
+// payload before logging.
+func (app *CLIApplication) createJSONRequest(method, url string, payload map[string]any, excludeFields ...string) (*http.Request, error) {
+	// Log the request (omitting sensitive fields)
+	if payload != nil {
+		logPayload := make(map[string]any)
+		for k, v := range payload {
+			logPayload[k] = v
+		}
+		for _, field := range excludeFields {
+			delete(logPayload, field)
+		}
+		app.Logger.Info("sending request",
+			"method", method,
+			"url", url,
+			"payload", logPayload)
+	}
+
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal JSON: %w", err)
@@ -89,4 +109,65 @@ func (app *CLIApplication) createJSONRequest(method, url string, payload interfa
 
 	req.Header.Set("Content-Type", "application/json")
 	return req, nil
+}
+
+// readResponse reads the response body and logs the response's method,
+// url, status, and body. If the body isn't valid JSON, it logs the body as a
+// string.
+func (app *CLIApplication) readResponse(resp *http.Response, handleError func(string, error) error) ([]byte, error) {
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, handleError("failed to read response body", err)
+	}
+
+	// Try to parse as JSON first
+	var responseBody any
+	if json.Valid(body) {
+		var data interface{} // use interface{} instead of map to handle arrays and nested structures
+		if err := json.Unmarshal(body, &data); err != nil {
+			return nil, handleError("failed to parse JSON response", err)
+		}
+		responseBody = data
+	} else {
+		responseBody = string(body)
+	}
+
+	app.Logger.Info("received response",
+		"method", resp.Request.Method,
+		"url", resp.Request.URL,
+		"status", resp.Status,
+		"body", responseBody)
+
+	return body, nil
+}
+
+// readTodoListResponse is logs condensed data from the GET /v1/todos endpoint.
+// Specifically, it logs the pagination data and the number of todos. The actual
+// todos are not logged.
+func (app *CLIApplication) readTodoListResponse(resp *http.Response, handleError func(string, error) error) ([]byte, error) {
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, handleError("failed to read response body", err)
+	}
+
+	if json.Valid(body) {
+		var data map[string]interface{}
+		if err := json.Unmarshal(body, &data); err != nil {
+			return nil, handleError("failed to parse JSON response", err)
+		}
+
+		// Create condensed version for logging
+		logData := map[string]interface{}{
+			"pagination": data["paginationData"],
+			"todo_count": len(data["todos"].([]interface{})),
+		}
+
+		app.Logger.Info("received todos",
+			"method", resp.Request.Method,
+			"url", resp.Request.URL,
+			"status", resp.Status,
+			"summary", logData)
+	}
+
+	return body, nil
 }

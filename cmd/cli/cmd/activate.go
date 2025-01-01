@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/spf13/cobra"
@@ -43,16 +42,17 @@ they register.`,
 		url := app.Config.APIBaseURL + "/users/activation"
 
 		// Define error handler
-		handleError := func(msg string, err error) {
+		handleError := func(msg string, err error) error {
 			app.Logger.Error(msg,
 				"error", err,
 				"method", http.MethodPut,
 				"url", url)
 			fmt.Println("Error: Activation failed. Check logs for details.")
+			return err
 		}
 
 		// Prepare JSON payload
-		payload := map[string]string{
+		payload := map[string]any{
 			"token": activationToken,
 		}
 
@@ -77,17 +77,11 @@ they register.`,
 		}
 		defer resp.Body.Close()
 
-		// Read response body
-		body, err := io.ReadAll(resp.Body)
+		// Read response body and log it
+		body, err := app.readResponse(resp, handleError)
 		if err != nil {
-			handleError("failed to read response body", err)
 			return
 		}
-
-		// Log the response (before processing)
-		app.Logger.Info("received response",
-			"status", resp.Status,
-			"body", string(body))
 
 		// Handle different status codes
 		switch resp.StatusCode {
