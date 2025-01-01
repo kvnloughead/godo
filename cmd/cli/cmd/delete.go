@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// DeleteCmd removes a todo item by its ID. Users can only delete their own todos. This command requires authentication.
-var DeleteCmd = &cobra.Command{
+// deleteCmd removes a todo item by its ID. Users can only delete their own todos. This command requires authentication.
+var deleteCmd = &cobra.Command{
 	Use:   "delete <id>",
 	Short: "Delete a todo item by its ID",
 	Long: `
@@ -76,5 +76,5 @@ about authentication.`,
 }
 
 func init() {
-	rootCmd.AddCommand(DeleteCmd)
+	rootCmd.AddCommand(deleteCmd)
 }
