@@ -4,9 +4,9 @@
 package interactive
 
 import (
+	"bufio"
 	"fmt"
 	"os"
-	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -15,14 +15,14 @@ import (
 )
 
 // Command represents an action that can be performed on an item. Each command
-// hasa primary name, optional aliases, and an action function to execute.
+// has a primary name, optional aliases, and an action function to execute.
 type Command struct {
 	// The long form of the command. e.g., "delete"
 	Name string
 	// The shorthand aliases for the command. e.g., ["rm", "del"]
 	Aliases []string
 	// The function to execute when the command is run.
-	Action func(todoID int) error
+	Action func([]int) error
 }
 
 // Mode manages an interactive session, holding the available commands
@@ -57,8 +57,13 @@ func (m *Mode) Prompt(todos []types.Todo) error {
 	m.todos = todos
 
 	fmt.Print("Enter command (? for help): ")
-	var input string
-	fmt.Scanln(&input)
+
+	reader := bufio.NewReader(os.Stdin)
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		return fmt.Errorf("error reading input: %v", err)
+	}
+	input = strings.TrimSpace(input)
 
 	if input == "q" || input == "quit" || input == "exit" {
 		fmt.Print("Exiting interactive mode.\n\n")
@@ -73,83 +78,62 @@ func (m *Mode) Prompt(todos []types.Todo) error {
 	return m.executeCommand(input)
 }
 
-// executeCommand handles both shorthand and longform commands. It parses the
-// input, validates the item number, and either executes the command directly or
-// prompts for one if none was provided.
+// executeCommand handles command execution with multiple todo IDs
 func (m *Mode) executeCommand(input string) error {
-	num, cmd, err := m.parseInput(input)
-	if err != nil {
-		return fmt.Errorf("unknown command: %s", input)
+	fields := strings.Fields(input)
+	if len(fields) == 0 {
+		return fmt.Errorf("input cannot be empty")
 	}
 
-	if num < 1 || num > len(m.todos) {
-		return fmt.Errorf("invalid todo number: %d", num)
-	}
+	cmdStr := fields[0]
+	var cmd *Command
 
-	if cmd == "" {
-		return m.promptForCommand(num)
-	}
-
-	return m.execute(num, cmd)
-}
-
-// parseInput handles both "2rm" style and plain number inputs. It returns the
-// item number and command string, or an error if the input is invalid.
-func (m *Mode) parseInput(input string) (num int, cmd string, err error) {
-	re := regexp.MustCompile(`^(\d+)(.*)$`)
-	matches := re.FindStringSubmatch(input)
-	if matches == nil {
-		return 0, "", fmt.Errorf("input must start with a number")
-	}
-
-	num, _ = strconv.Atoi(matches[1])
-	cmd = matches[2]
-	return num, cmd, nil
-}
-
-// promptForCommand asks user for a command when only an item number was
-// provided. It displays available commands with their aliases and validates
-// the user's input.
-func (m *Mode) promptForCommand(todoNum int) error {
-	fmt.Println("\nAvailable commands:")
-	for _, cmd := range m.commands {
-		aliases := strings.Join(cmd.Aliases, "/")
-		fmt.Printf("  %s (%s)\n", cmd.Name, aliases)
-	}
-
-	fmt.Print("\nEnter command: ")
-	var cmd string
-	fmt.Scanln(&cmd)
-
-	return m.execute(todoNum, cmd)
-}
-
-// execute runs the specified command on the selected item. It checks both the
-// command name and its aliases to find a match. Returns an error if the command
-// is not recognized.
-func (m *Mode) execute(todoNum int, cmdStr string) error {
-	// First check aliases
-	for _, cmd := range m.commands {
-		if cmdStr == cmd.Name || slices.Contains(cmd.Aliases, cmdStr) {
-			todoID := m.todos[todoNum-1].ID
-			return cmd.Action(todoID)
+	// Find matching command
+	for _, c := range m.commands {
+		if cmdStr == c.Name || slices.Contains(c.Aliases, cmdStr) {
+			cmd = c
+			break
 		}
 	}
 
-	return fmt.Errorf("unknown command: %s", cmdStr)
+	if cmd == nil {
+		return fmt.Errorf("unknown command: %s", cmdStr)
+	}
+
+	// Parse todo numbers
+	if len(fields) < 2 {
+		return fmt.Errorf("no todo numbers provided")
+	}
+
+	var ids []int
+	for _, numStr := range fields[1:] {
+		num, err := strconv.Atoi(numStr)
+		if err != nil {
+			return fmt.Errorf("invalid todo number: %s", numStr)
+		}
+		if num < 1 || num > len(m.todos) {
+			return fmt.Errorf("todo number out of range: %d", num)
+		}
+		// Convert from 1-based display number to actual todo ID
+		ids = append(ids, m.todos[num-1].ID)
+	}
+
+	return cmd.Action(ids)
 }
 
 // showHelp displays the available commands in interactive mode.
 func (m *Mode) showHelp() {
 	fmt.Println("\nUsage:")
-	fmt.Println("  Enter a number to select a todo, followed by a command to perform an action on it.")
+	fmt.Println("  Enter a command (or command alias) followed by one or more todo numbers")
 	fmt.Println("\nExamples:")
-	fmt.Println("  1rm|1del|1delete will delete todo 1")
-	fmt.Println("  1d|1done will mark todo 1 as done")
-	fmt.Println("  1d-|1undone will mark todo 1 as not done")
-	fmt.Println("  1u|1update will update the text of todo 1")
-	fmt.Println("  1a|1archive will archive todo 1")
-	fmt.Println("  1ua|1unarchive will unarchive todo 1")
+	fmt.Println("  rm 1 2 3      Delete todos 1, 2, and 3")
+	fmt.Println("  done 4 5      Mark todos 4 and 5 as done")
+	fmt.Println("  archive 6     Archive todo 6")
+	fmt.Println("\nCommands:")
+	for _, cmd := range m.commands {
+		aliases := strings.Join(cmd.Aliases, "/")
+		fmt.Printf("  %s (%s)\n", cmd.Name, aliases)
+	}
 	fmt.Println("\nOther Commands:")
 	fmt.Println("  ?        Show this help")
 	fmt.Println("  q        Quit")

@@ -75,45 +75,55 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 			"delete": {
 				Name:    "delete",
 				Aliases: []string{"rm", "del"},
-				Action: func(todoID int) error {
+				Action: func(todoIDs []int) error {
 					dummyCmd := &cobra.Command{}
-					deleteCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					for _, todoID := range todoIDs {
+						deleteCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					}
 					return nil
 				},
 			},
 			"done": {
 				Name:    "done",
 				Aliases: []string{"d", "complete"},
-				Action: func(todoID int) error {
+				Action: func(todoIDs []int) error {
 					dummyCmd := &cobra.Command{}
-					doneCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					for _, todoID := range todoIDs {
+						doneCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					}
 					return nil
 				},
 			},
 			"undone": {
 				Name:    "undone",
 				Aliases: []string{"u", "undone", "undo", "incomplete"},
-				Action: func(todoID int) error {
+				Action: func(todoIDs []int) error {
 					dummyCmd := &cobra.Command{}
-					undoneCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					for _, todoID := range todoIDs {
+						undoneCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					}
 					return nil
 				},
 			},
 			"archive": {
 				Name:    "archive",
 				Aliases: []string{"a"},
-				Action: func(todoID int) error {
+				Action: func(todoIDs []int) error {
 					dummyCmd := &cobra.Command{}
-					archiveCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					for _, todoID := range todoIDs {
+						archiveCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					}
 					return nil
 				},
 			},
 			"unarchive": {
 				Name:    "unarchive",
 				Aliases: []string{"ua"},
-				Action: func(todoID int) error {
+				Action: func(todoIDs []int) error {
 					dummyCmd := &cobra.Command{}
-					unarchiveCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					for _, todoID := range todoIDs {
+						unarchiveCmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
+					}
 					return nil
 				},
 			},
@@ -129,13 +139,14 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 				return
 			}
 
-			displayTodos(todos, plain)
+			// Store the ordered todos for interactive mode
+			orderedTodos := displayTodos(todos, plain)
 
 			if plain {
 				break
 			}
 
-			if err := interactive.Prompt(todos); err != nil {
+			if err := interactive.Prompt(orderedTodos); err != nil {
 				fmt.Printf("Error: %v\n", err)
 			}
 		}
@@ -215,12 +226,13 @@ func fetchTodos(args []string, params url.Values) ([]types.Todo, error) {
 //
 // In interactive mode, the output is formatted for use with the interactive //
 // package.
-func displayTodos(todos []types.Todo, plain bool) {
+func displayTodos(todos []types.Todo, plain bool) []types.Todo {
 	if plain {
 		fmt.Println("id\tcompleted\ttext")
 		for _, todo := range todos {
 			fmt.Printf("%d\t%t\t\t%s\n", todo.ID, todo.Completed, todo.Text)
 		}
+		return todos
 	} else {
 		// Split todos into active and archived
 		var active, archived []types.Todo
@@ -241,21 +253,28 @@ func displayTodos(todos []types.Todo, plain bool) {
 		sortTodos(active)
 		sortTodos(archived)
 
+		// Combine the slices in display order
+		orderedTodos := append(active, archived...)
+
 		// Display active todos
+		displayIndex := 1
 		output := func(todos []types.Todo, heading string) {
 			if len(todos) > 0 {
 				fmt.Println("\n" + heading + ":\n")
-				for i, todo := range todos {
+				for _, todo := range todos {
 					if todo.Completed {
-						fmt.Printf("%2d. [\033[90m✓\033[0m] \033[90m%s\033[0m\n", i+1, todo.Text)
+						fmt.Printf("%2d. [\033[90m✓\033[0m] \033[90m%s\033[0m\n", displayIndex, todo.Text)
 					} else {
-						fmt.Printf("%2d. [ ] %s\n", i+1, todo.Text)
+						fmt.Printf("%2d. [ ] %s\n", displayIndex, todo.Text)
 					}
+					displayIndex++
 				}
 			}
 		}
 		output(active, "Todos")
 		output(archived, "Archived")
+
+		return orderedTodos
 	}
 }
 
