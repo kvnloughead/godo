@@ -221,11 +221,13 @@ func displayTodos(todos []types.Todo, plain bool) {
 	sort.Slice(todos, func(i, j int) bool {
 		if todos[i].Archived != todos[j].Archived {
 			return !todos[i].Archived
+		} else if todos[i].Completed != todos[j].Completed {
+			return !todos[i].Completed
 		}
-		return !todos[i].Completed
+		return todos[i].ID < todos[j].ID
 	})
-	// Output in plain text mode
 
+	// Output in plain text mode
 	if plain {
 		fmt.Println("id\tcompleted\ttext")
 		for _, todo := range todos {
