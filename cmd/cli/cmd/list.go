@@ -216,34 +216,46 @@ func fetchTodos(args []string, params url.Values) ([]types.Todo, error) {
 // In interactive mode, the output is formatted for use with the interactive //
 // package.
 func displayTodos(todos []types.Todo, plain bool) {
-	// Sort todos by archived status (unarchived first) and completion status
-	// (incomplete first). This prevents gaps in the displayed todo numbers.
-	sort.Slice(todos, func(i, j int) bool {
-		if todos[i].Archived != todos[j].Archived {
-			return !todos[i].Archived
-		} else if todos[i].Completed != todos[j].Completed {
-			return !todos[i].Completed
-		}
-		return todos[i].ID < todos[j].ID
-	})
-
-	// Output in plain text mode
 	if plain {
 		fmt.Println("id\tcompleted\ttext")
 		for _, todo := range todos {
 			fmt.Printf("%d\t%t\t\t%s\n", todo.ID, todo.Completed, todo.Text)
 		}
-		// Output in interactive mode
 	} else {
-		fmt.Println("\nTodos:")
-		for i, todo := range todos {
-			if todo.Completed {
-				fmt.Printf("%2d. [\033[90m✓\033[0m] \033[90m%s\033[0m\n",
-					i+1, todo.Text)
+		// Split todos into active and archived
+		var active, archived []types.Todo
+		for _, todo := range todos {
+			if todo.Archived {
+				archived = append(archived, todo)
 			} else {
-				fmt.Printf("%2d. [ ] %s\n", i+1, todo.Text)
+				active = append(active, todo)
 			}
 		}
+
+		// Sort each slice by completion status (uncompleted first)
+		sortTodos := func(todos []types.Todo) {
+			sort.Slice(todos, func(i, j int) bool {
+				return !todos[i].Completed
+			})
+		}
+		sortTodos(active)
+		sortTodos(archived)
+
+		// Display active todos
+		output := func(todos []types.Todo, heading string) {
+			if len(todos) > 0 {
+				fmt.Println("\n" + heading + ":\n")
+				for i, todo := range todos {
+					if todo.Completed {
+						fmt.Printf("%2d. [\033[90m✓\033[0m] \033[90m%s\033[0m\n", i+1, todo.Text)
+					} else {
+						fmt.Printf("%2d. [ ] %s\n", i+1, todo.Text)
+					}
+				}
+			}
+		}
+		output(active, "Todos")
+		output(archived, "Archived")
 	}
 }
 
