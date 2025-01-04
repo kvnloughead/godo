@@ -50,6 +50,9 @@ type TodoModel struct {
 // filtered, sorted, and paginated via several optional query parameters.
 //
 //   - text: if provided, fuzzy matches on the todo's text.
+//   - archived status: by default, only unarchived todos are included. The
+//     query params "include-archived" and "only-archived" can be used to
+//     override this behavior.
 //   - contexts: if provided, only todos that have each of the provided contexts
 //     are included.
 //   - projects: if provided, only todos that have each of the provided projects
@@ -61,15 +64,30 @@ type TodoModel struct {
 //
 // Pagination metadata is returned in the response, unless no records are found.
 func (m TodoModel) GetAll(text string, userID int64, contexts []string, projects []string, filters Filters) ([]*Todo, PaginationData, error) {
+	whereClause := `WHERE text ILIKE '%%' || $1 || '%%' AND user_id = $2`
+
+	// Handle archived/unarchived filtering.
+	if filters.OnlyArchived {
+		whereClause += " AND archived = true" // show only archived
+	} else if !filters.IncludeArchived {
+		whereClause += " AND archived = false" // show only unarchived (default)
+	}
+
+	// Handle completion status filtering
+	if filters.Done {
+		whereClause += " AND completed = true"
+	} else if filters.Undone {
+		whereClause += " AND completed = false"
+	}
+
 	query := fmt.Sprintf(` 
 		SELECT 
 			count(*) OVER(),
 			id, created_at, text, contexts, projects, priority, completed, archived, version
 		FROM todos
-		WHERE text ILIKE '%%' || $1 || '%%'
-		AND user_id = $2
+		%s
 		ORDER BY %s %s, id ASC
-		LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
+		LIMIT $3 OFFSET $4`, whereClause, filters.sortColumn(), filters.sortDirection())
 
 	ctx, cancel := CreateTimeoutContext(QueryTimeout)
 	defer cancel()

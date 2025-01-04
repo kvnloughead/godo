@@ -191,6 +191,26 @@ func (app *APIApplication) readQueryInt(qs url.Values, key string, defaultValue 
 	return i
 }
 
+// readQueryBool reads a boolean valued field from the query string argument.
+// If the field is empty, the default value is returned. If the field can't be
+// converted to a boolean, the default value is returned, and an error is
+// added to the validator instance.
+func (app *APIApplication) readQueryBool(qs url.Values, key string, defaultValue bool, v *validator.Validator) bool {
+	s := qs.Get(key)
+
+	if s == "" {
+		return defaultValue
+	}
+
+	b, err := strconv.ParseBool(s)
+	if err != nil {
+		v.AddError(key, "must be a boolean value")
+		return defaultValue
+	}
+
+	return b
+}
+
 // The background method launches a background goroutine. This goroutine
 // recovers from panics, logging the resulting errors with app.Logger, and
 // calls the function argument.

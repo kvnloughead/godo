@@ -14,25 +14,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// interactiveCmd creates an interactive command struct. It accepts a command
-// name, aliases, and the actual command to run. The command to be executed is
-// wrapped in a dummy command so that it can be executed in interactive mode.
-//
-// Interactive commands are logged to the log file, but not until the interactive
-// interactive mode is exited.
-func interactiveCmd(cmdName string, aliases []string, cmd *cobra.Command) *interactive.Command {
-	return &interactive.Command{
-		Name:    cmdName,
-		Aliases: aliases,
-		Action: func(todoID int) error {
-			app.Logger.Info("executing interactive command",
-				"command", cmdName,
-				"todo_id", todoID)
-			dummyCmd := &cobra.Command{}
-			cmd.Run(dummyCmd, []string{strconv.Itoa(todoID)})
-			return nil
-		},
-	}
+// boolFlags is a list of boolean flags that map to URL query parameters.
+var boolFlags = []types.QueryFlag{
+	{Flag: "include-archived", Param: "include-archived", Msg: "include archived todos"},
+	{Flag: "only-archived", Param: "only-archived", Msg: "only show archived todos"},
+	{Flag: "done", Param: "done", Short: "d", Msg: "show only completed todos"},
+	{Flag: "undone", Param: "undone", Short: "u", Msg: "show only incomplete todos"},
 }
 
 // listCmd displays todos and can be filtered by a plain text search pattern.
@@ -65,12 +52,22 @@ Examples:
     godo list --all
 
 		# List only archived and uncompleted todos
-		godo list --archived --undone
+		godo list --only-archived --undone
 
 This command requires authentication. Run 'godo auth -h' for more information.`,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		// Get flags.
+		// Get boolean flags that map to URL query parameters.
+		params := url.Values{}
+
+		// Add boolean query parameters.
+		for _, f := range boolFlags {
+			if val, _ := cmd.Flags().GetBool(f.Flag); val {
+				params.Add(f.Param, "true")
+			}
+		}
+
+		// Get other flags.
 		plain, _ := cmd.Flags().GetBool("plain")
 
 		// Set up interactive commands.
@@ -127,7 +124,7 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 		// will exit after the todos are displayed. Otherwise, the loop will
 		// continue until the user exits interactive mode.
 		for {
-			todos, err := fetchTodos(args)
+			todos, err := fetchTodos(args, params)
 			if err != nil {
 				return
 			}
@@ -145,14 +142,17 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 	},
 }
 
-// fetchTodos retrieves todos from the API, handling authentication and filtering
-func fetchTodos(args []string) ([]types.Todo, error) {
+// fetchTodos retrieves todos from the API, handling authentication and
+// filtering.
+func fetchTodos(args []string, params url.Values) ([]types.Todo, error) {
+	// Add query parameters to the base URL.
 	baseURL := app.Config.APIBaseURL + "/todos"
 	if len(args) > 0 {
 		searchText := strings.ReplaceAll(args[0], "+", "%2B")
 		searchPattern := url.QueryEscape(searchText)
-		baseURL = baseURL + "?text=" + searchPattern
+		params.Add("text", searchPattern)
 	}
+	baseURL = baseURL + "?" + params.Encode()
 
 	stdoutMsg := "\nError: failed to list todo items. \nCheck `~/.config/godo/logs` for details.\n"
 
@@ -224,23 +224,17 @@ func displayTodos(todos []types.Todo, plain bool) {
 		}
 		return !todos[i].Completed
 	})
-
 	// Output in plain text mode
+
 	if plain {
 		fmt.Println("id\tcompleted\ttext")
 		for _, todo := range todos {
-			if todo.Archived {
-				continue
-			}
 			fmt.Printf("%d\t%t\t\t%s\n", todo.ID, todo.Completed, todo.Text)
 		}
 		// Output in interactive mode
 	} else {
 		fmt.Println("\nTodos:")
 		for i, todo := range todos {
-			if todo.Archived {
-				continue
-			}
 			if todo.Completed {
 				fmt.Printf("%2d. [\033[90m✓\033[0m] \033[90m%s\033[0m\n",
 					i+1, todo.Text)
@@ -255,4 +249,17 @@ func init() {
 	rootCmd.AddCommand(listCmd)
 
 	listCmd.Flags().BoolP("plain", "p", false, "output in plain text to stdout")
+
+	// Add boolean flags that map to URL query parameters.
+	for _, f := range boolFlags {
+		if f.Short != "" {
+			listCmd.Flags().BoolP(f.Flag, f.Short, false, f.Msg)
+		} else {
+			listCmd.Flags().Bool(f.Flag, false, f.Msg)
+		}
+	}
+
+	// Mark flags as mutually exclusive.
+	listCmd.MarkFlagsMutuallyExclusive("only-archived", "include-archived")
+	listCmd.MarkFlagsMutuallyExclusive("done", "undone")
 }

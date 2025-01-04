@@ -14,6 +14,8 @@ import (
 //
 // Various options for filtering, sorting, and pagination are available. See
 // TodoModel.GetAll for details.
+//
+// URL encoded search text can be provided in the text query parameter.
 func (app *APIApplication) listTodos(w http.ResponseWriter, r *http.Request) {
 	// input is an anonymous struct intended to store the query params for
 	// filtering, sorting, and pagination.
@@ -38,6 +40,14 @@ func (app *APIApplication) listTodos(w http.ResponseWriter, r *http.Request) {
 	input.Filters.PageSize = app.readQueryInt(qs, "page_size", 20, v)
 	input.Filters.Sort = app.readQueryString(qs, "sort", "id")
 	input.Filters.SortSafelist = []string{"id", "text", "-id", "-text"}
+
+	// Add archive filters
+	input.Filters.IncludeArchived = app.readQueryBool(qs, "include-archived", false, v)
+	input.Filters.OnlyArchived = app.readQueryBool(qs, "only-archived", false, v)
+
+	// Add completion filters
+	input.Filters.Done = app.readQueryBool(qs, "done", false, v)
+	input.Filters.Undone = app.readQueryBool(qs, "undone", false, v)
 
 	if !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)

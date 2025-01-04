@@ -1,6 +1,7 @@
 package data
 
 import (
+	"reflect"
 	"strings"
 
 	validator "github.com/kvnloughead/godo/internal"
@@ -38,6 +39,14 @@ type Filters struct {
 	// SortSafeList is a string slice containing a list of acceptable query
 	// parameters for sorting.
 	SortSafelist []string
+
+	// Archive filters - default (false, false) means show only unarchived
+	IncludeArchived bool
+	OnlyArchived    bool
+
+	// Completion filters
+	Done   bool
+	Undone bool
 }
 
 // sortColumn returns the column to sort by from the filter's Sort field.
@@ -81,4 +90,18 @@ func ValidateFilters(v *validator.Validator, f Filters) {
 	v.Check(f.PageSize <= 100, "page_size", "must be no more than 100")
 
 	v.Check(validator.PermittedValue(f.Sort, f.SortSafelist...), "sort", "invalid sorting key")
+
+	// Validate that the boolean flags
+	v.Check(reflect.TypeOf(f.IncludeArchived).Kind() == reflect.Bool, "include-archived", "must be boolean")
+	v.Check(reflect.TypeOf(f.OnlyArchived).Kind() == reflect.Bool, "only-archived", "must be boolean")
+	v.Check(reflect.TypeOf(f.Done).Kind() == reflect.Bool, "done", "must be boolean")
+	v.Check(reflect.TypeOf(f.Undone).Kind() == reflect.Bool, "undone", "must be boolean")
+
+	// Validate mutually exclusive flags
+	if f.IncludeArchived && f.OnlyArchived {
+		v.AddError("filters", "include-archived and only-archived are mutually exclusive")
+	}
+	if f.Done && f.Undone {
+		v.AddError("filters", "done and undone are mutually exclusive")
+	}
 }

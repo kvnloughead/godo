@@ -23,3 +23,11 @@ type TodoResponse struct {
 	PaginationData PaginationData `json:"paginationData"`
 	Todos          []Todo         `json:"todos"`
 }
+
+// queryFlag represents a boolean flag that maps to a URL query parameter
+type QueryFlag struct {
+	Flag  string // flag name in CLI
+	Param string // parameter name in URL
+	Short string // short flag (optional, empty string if none)
+	Msg   string // help message for the flag
+}
