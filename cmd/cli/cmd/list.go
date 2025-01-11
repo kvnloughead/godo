@@ -99,7 +99,7 @@ This command requires authentication. Run 'godo auth -h' for more information.`,
 			},
 			"undone": {
 				Name:    "undone",
-				Aliases: []string{"u", "undone", "undo", "incomplete"},
+				Aliases: []string{"ud", "incomplete"},
 				Action: func(todoIDs []int) error {
 					dummyCmd := &cobra.Command{}
 					for _, todoID := range todoIDs {

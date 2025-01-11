@@ -32,7 +32,7 @@ Commands follow the format: `command number [number...]`
 
 - `delete`: `rm`, `del`
 - `done`: `d`, `complete`
-- `undone`: `u`, `undo`, `incomplete`
+- `undone`: `ud`, `incomplete`
 - `archive`: `a`
 - `unarchive`: `ua`
 
