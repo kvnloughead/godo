@@ -38,8 +38,11 @@ The --plain flag outputs the todos in plain text format suitable for scripts and
   - completed: the todo completion status
   - text: the todo text
 
-Without the --plain flag, the command enters an interactive mode. To see the
-available commands, run 'godo list' and press '?'.
+Without the --plain flag, the command enters an interactive mode. When in
+interactive mode, the command will prompt for a command and one or more todo
+IDs. The command will then be applied to the corresponding todos.
+
+To see the available interactive-mode commands, run 'godo list' and press '?'.
 
 Examples:
     # List unarchived todos in plain text format
@@ -51,8 +54,8 @@ Examples:
     # List all todos (including archived) in interactive mode
     godo list --all
 
-		# List only archived and uncompleted todos
-		godo list --only-archived --undone
+    # List only archived and uncompleted todos
+    godo list --only-archived --undone
 
 This command requires authentication. Run 'godo auth -h' for more information.`,
 	Args: cobra.MaximumNArgs(1),

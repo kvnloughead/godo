@@ -77,3 +77,16 @@
 ## Deployment
 
 - [ ] Leave the sandbox email environment when deploying to prod
+
+## Misc
+
+- [ ] variadic arguments for commands (not just in interactive mode`)
+
+## In Progress
+
+- document list command more fully
+- improve visibility of "unknown command" types of interactive mode errors
+- re-prompt for todos if none provided
+- re-prompt for command if none provided
+- DRY commands in list.go
+- Add archived status to output of --plain

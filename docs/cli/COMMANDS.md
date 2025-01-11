@@ -68,45 +68,40 @@ godo add "Todo text here"
 
 ### `list`
 
-List all (or some) todo items. Supports simple text filtering and enters an interactive mode for managing todos.
+List and manage todo items. By default, enters an interactive mode for managing todos.
 
 **Usage:**
 
 ```bash
-godo list [pattern]
+godo list [flags] [pattern]
 ```
 
 **Arguments:**
 
 - `pattern`: Optional text to filter todos (e.g., "@phone" or "some task")
 
-**Interactive Mode Commands:**
+**Flags:**
 
-- `<number>`: Select a todo by its number
-- `<number>rm|del|delete`: Delete the selected todo
-- `<number>d|done`: Mark the selected todo as done
-- `<number>u|undone`: Mark the selected todo as not done
-- `<number>e|edit`: Edit the selected todo's text
-- `<number>a|archive`: Archive the selected todo
-
-**Other Commands:**
-
-- `?` or `help`: Show help for interactive mode
-- `q`, `quit`, or `exit`: Exit interactive mode
+- `-p, --plain`: Output in plain text format (disables interactive mode)
+- `--include-archived`: Include archived todos in the list
+- `--only-archived`: Show only archived todos
+- `-d, --done`: Show only completed todos
+- `-u, --undone`: Show only incomplete todos
 
 **Examples:**
 
-````bash
-# List all todos
+```bash
+# List all unarchived todos in interactive mode
 godo list
 
-# List todos containing "@phone"
+# List todos containing "@phone" in interactive mode
 godo list @phone
 
-# In interactive mode:
-1rm     # Delete todo #1
-2d      # Mark todo #2 as done
-3u      # Mark todo #3 as not done
+# List all todos (including archived) in plain text format
+godo list --include-archived --plain
+```
+
+See [INTERACTIVE.md](./INTERACTIVE.md) for details about interactive mode.
 
 ### `delete`
 
@@ -141,4 +136,3 @@ Mark a todo item as not completed.
 ```bash
 godo undone [id]
 ```
-````

@@ -124,11 +124,11 @@ func (m *Mode) executeCommand(input string) error {
 // showHelp displays the available commands in interactive mode.
 func (m *Mode) showHelp() {
 	fmt.Println("\nUsage:")
-	fmt.Println("  Enter a command (or command alias) followed by one or more todo numbers")
+	fmt.Println("  command [numbers...]   Apply command to one or more todos")
 	fmt.Println("\nExamples:")
-	fmt.Println("  rm 1 2 3      Delete todos 1, 2, and 3")
-	fmt.Println("  done 4 5      Mark todos 4 and 5 as done")
-	fmt.Println("  archive 6     Archive todo 6")
+	fmt.Println("  rm 1 2 3  \tDelete todos 1, 2, and 3")
+	fmt.Println("  done 4 5  \tMark todos 4 and 5 as done")
+	fmt.Println("  archive 6 \tArchive todo 6")
 	fmt.Println("\nCommands:")
 	for _, cmd := range m.commands {
 		aliases := strings.Join(cmd.Aliases, "/")
