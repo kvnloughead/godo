@@ -1,67 +1,35 @@
 # TODO
 
-### Todo Management Commands
+## Fixes
 
-- [ ] `done` command to mark todos as completed
-- [ ] Command to mark todos as not done (name TBD)
-- [ ] `update` command to modify existing todos
-- [ ] Interactive listing with numbered results and pagination
-- [ ] Command to edit todos in preferred editor
+- [ ] Fix panic when deleting multiple todos
+
+## CLI
+
+### Commands
+
+- [ ] `edit` command to modify existing todos
 - [ ] Command to sync edited todos back to API
+- [x] `done` command to mark todos as completed
+- [x] Command to mark todos as not done ()
+- [x] Interactive listing with numbered results
 
-### Refactoring
-
-- [] Handle activation tokens in token package
-
-### Todo Listing and Filtering
-
-- [ ] Toggle to show/hide completed tasks
-- [ ] Archive management (archive/unarchive/view archive)
-- [ ] Display creation and modification dates
-- [ ] Support for due dates
-- [ ] Priority system (todo.txt style)
-- [x] Interactive selection of todos by number
-
-## GET /v1/todos
-
-- [ ] Implement search by context (@context)
-- [ ] Implement search by project (+project)
-- [ ] Verify that all sort, filter, pagination options work
-- [ ] In readme, describe options for sorting, filtering, and pagination
-- [ ] Implement additional query params for filtering
-
-## Todo Model
-
-- [ ] Implement and validate todo metadata
-- [ ] Add fields for:
-  - [ ] completion status
-  - [ ] creation date
-  - [ ] modification date
-  - [ ] due date
-  - [ ] priority
-  - [ ] archived status
-  - [ ] contexts (array)
-  - [ ] projects (array)
-
-## Security Enhancements and Logging
-
-- [ ] Implement SSH authentication
-- [ ] Log suspicious patterns separately
-- [ ] Track repeated failed attempts
-- [x] Add rate limiting information
-
-## Error Handling
+### Error Handling
 
 - [ ] CLI should return authentication error responses appropriately
 
-## Configuration
+### Todo Listing and Filtering
 
-- [x] DRY up the config code for apiBaseURL and config files
-
-## Development
-
-- [x] Separate tokens for prod and dev
-- [x] Increase token life for dev
+- [ ] Add archived status to output of --plain
+- [ ] Display creation and modification dates
+- [ ] Display IDs
+- [ ] Support for due dates
+- [ ] Priority system (todo.txt style)
+- [ ] DRY commands in list.go
+- [x] variadic arguments for commands (not just in interactive mode`)
+- [x] document list command more fully
+- [x] Archive management (archive/unarchive/view archive)
+- [x] Interactive selection of todos by number
 
 ## Interactive Mode
 
@@ -69,24 +37,32 @@
 - [ ] add search
 - [ ] add sorting
 - [ ] add filtering
-- [ ] generate command help from command struct tags
 - [ ] add command history
 - [ ] add command completion
 - [ ] log commands immediately, not after interactive mode is exited
+- [ ] improve visibility of "unknown command" types of interactive mode errors
+- [ ] re-prompt for todos if none provided
+- [ ] re-prompt for command if none provided
+- [ ] generate command help from command struct tags
+- [ ] Toggle to show/hide completed tasks
+- [ ] Check/uncheck all
+- [ ] Prompt before deleting todos
 
-## Deployment
+---
+
+## API
+
+### Security Enhancements and Logging
+
+- [ ] Implement SSH authentication
+- [ ] Log suspicious patterns separately
+- [ ] Track repeated failed attempts
+- [x] Add rate limiting information
+
+### Token Management
+
+- [ ] Handle activation tokens in token package
+
+### Deployment
 
 - [ ] Leave the sandbox email environment when deploying to prod
-
-## Misc
-
-- [ ] variadic arguments for commands (not just in interactive mode`)
-
-## In Progress
-
-- document list command more fully
-- improve visibility of "unknown command" types of interactive mode errors
-- re-prompt for todos if none provided
-- re-prompt for command if none provided
-- DRY commands in list.go
-- Add archived status to output of --plain
