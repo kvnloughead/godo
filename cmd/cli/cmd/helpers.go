@@ -141,7 +141,7 @@ func (app *CLIApplication) readResponse(resp *http.Response, handleError func(st
 	return body, nil
 }
 
-// readTodoListResponse is logs condensed data from the GET /v1/todos endpoint.
+// readTodoListResponse logs condensed data from the GET /v1/todos endpoint.
 // Specifically, it logs the pagination data and the number of todos. The actual
 // todos are not logged.
 func (app *CLIApplication) readTodoListResponse(resp *http.Response, handleError func(string, error) error) ([]byte, error) {
@@ -150,23 +150,19 @@ func (app *CLIApplication) readTodoListResponse(resp *http.Response, handleError
 		return nil, handleError("failed to read response body", err)
 	}
 
-	if json.Valid(body) {
-		var data map[string]interface{}
-		if err := json.Unmarshal(body, &data); err != nil {
-			return nil, handleError("failed to parse JSON response", err)
+	// For non-200 responses, try to parse error message
+	if resp.StatusCode != http.StatusOK {
+		var errorResp map[string]interface{}
+		if err := json.Unmarshal(body, &errorResp); err != nil {
+			return nil, handleError("failed to parse error response", err)
 		}
-
-		// Create condensed version for logging
-		logData := map[string]interface{}{
-			"pagination": data["paginationData"],
-			"todo_count": len(data["todos"].([]interface{})),
+		if errors, ok := errorResp["errors"]; ok {
+			if errArray, ok := errors.([]interface{}); ok && len(errArray) > 0 {
+				return nil, handleError(fmt.Sprintf("API error: %v", errArray[0]), nil)
+			}
+			return nil, handleError(fmt.Sprintf("API error: %v", errors), nil)
 		}
-
-		app.Logger.Info("received todos",
-			"method", resp.Request.Method,
-			"url", resp.Request.URL,
-			"status", resp.Status,
-			"summary", logData)
+		return nil, handleError("Unknown API error", nil)
 	}
 
 	return body, nil

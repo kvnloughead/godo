@@ -42,10 +42,19 @@ import (
 //
 //   - GET    /debug/vars                Display application metrics.
 //
+//   - DELETE   /v1/todos/batch          Delete a batch of todos.
+//     [permissions - todos:write]
+//
+//   - PATCH    /v1/todos/batch          Update a batch of todos.
+//     [permissions - todos:write]
+//
 // This function also sets up custom error handling for scenarios where no
 // route is matched (404 Not Found) and when a method is not allowed for a
 // given route (405 Method Not Allowed), using the custom error handlers
 // defined in api/errors.go.
+//
+// Routes ending in /batch perform batch operations on todos. They are
+// implemented in batch_handlers.go.
 //
 // Finally, the router is wrapped with the recoverPanic middleware to handle any
 // panics that occur during request processing.
@@ -58,12 +67,16 @@ func (app *APIApplication) Routes() http.Handler {
 
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheck)
 
-	// The /v1/todos endpoints require either todos:read or todos:write permission
+	// The /v1/todos endpoints require either todos:read or todos:write permissions
 	router.HandlerFunc(http.MethodGet, "/v1/todos", app.requirePermission(data.TodosRead, app.listTodos))
 	router.HandlerFunc(http.MethodPost, "/v1/todos", app.requirePermission(data.TodosWrite, app.createTodo))
 	router.HandlerFunc(http.MethodGet, "/v1/todos/:id", app.requirePermission(data.TodosRead, app.getTodo))
 	router.HandlerFunc(http.MethodPatch, "/v1/todos/:id", app.requirePermission(data.TodosWrite, app.updateTodo))
 	router.HandlerFunc(http.MethodDelete, "/v1/todos/:id", app.requirePermission(data.TodosWrite, app.deleteTodo))
+
+	// The /v1/todos/batch endpoints require todos:write permission
+	router.HandlerFunc(http.MethodDelete, "/v1/batch/todos", app.requirePermission(data.TodosWrite, app.deleteTodosBatch))
+	router.HandlerFunc(http.MethodPatch, "/v1/batch/todos", app.requirePermission(data.TodosWrite, app.updateTodosBatch))
 
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUser)
 	router.HandlerFunc(http.MethodPut, "/v1/users/activation", app.activateUser)

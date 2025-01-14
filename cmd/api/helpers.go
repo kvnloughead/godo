@@ -142,12 +142,22 @@ type envelope map[string]any
 func (app *APIApplication) readIdParam(r *http.Request) (int64, error) {
 	params := httprouter.ParamsFromContext(r.Context())
 
-	id, err := strconv.ParseInt(params.ByName("id"), 10, 64)
-	if err != nil || id < 1 {
-		return 0, errors.New("ID must be a positive integer")
+	id, err := app.parseID(params.ByName("id"))
+	if err != nil {
+		return 0, err
 	}
 
 	return id, nil
+}
+
+// parseID parses a string as a positive int64 and returns it, if possible.
+// Otherwise, it returns an error.
+func (app *APIApplication) parseID(id string) (int64, error) {
+	parsedID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil || parsedID < 1 {
+		return 0, errors.New("ID must be a positive integer")
+	}
+	return parsedID, nil
 }
 
 // readQueryString returns the value of the key in the provided query string
