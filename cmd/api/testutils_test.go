@@ -19,13 +19,16 @@ func (tw testWriter) Write(p []byte) (n int, err error) {
 }
 
 func newTestApplication(t *testing.T) *APIApplication {
-	// Create a mock database connection
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Set up expectations for multiple DELETE operations
+	// The first argument of NewResult (lastInsertId) is set to 0 because we
+	// don't need it. Success/failure is determined by the number of rows
+	// affected.
+
+	// Valid batch delete (IDs 1, 2, 3)
 	mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
 		WithArgs(1).
 		WillReturnResult(sqlmock.NewResult(0, 1))
@@ -38,16 +41,38 @@ func newTestApplication(t *testing.T) *APIApplication {
 		WithArgs(3).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
+	// Invalid ID format test (1, invalid, 3)
+	mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
+		WithArgs(1).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	// Note: "invalid" ID won't reach the database
+
+	mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
+		WithArgs(3).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	// Not found test (1, 999, 3)
+	mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
+		WithArgs(1).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
+		WithArgs(999).
+		WillReturnResult(sqlmock.NewResult(0, 0))
+
+	mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
+		WithArgs(3).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
 	logger := slog.New(slog.NewTextHandler(testWriter{t}, nil))
 
-	// Create an injector.Application first
 	injectorApp := &injector.Application{
 		Config: injector.Config{},
 		Logger: logger,
 		Models: data.NewModels(db),
 	}
 
-	// Return an APIApplication that embeds the injector.Application
 	return &APIApplication{
 		Application: injectorApp,
 	}

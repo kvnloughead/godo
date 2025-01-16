@@ -5,8 +5,16 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
+
+// Create a type that matches our expected response structure
+type batchResponse struct {
+	Success bool     `json:"success"`
+	Results []result `json:"results"`
+	Error   string   `json:"error,omitempty"`
+}
 
 func TestDeleteTodosBatch(t *testing.T) {
 	app := newTestApplication(t)
@@ -15,36 +23,68 @@ func TestDeleteTodosBatch(t *testing.T) {
 		name       string
 		input      map[string][]string
 		wantStatus int
-		wantBody   map[string]interface{}
+		wantBody   envelope
 	}{
 		{
 			name:       "Valid batch delete",
 			input:      map[string][]string{"ids": {"1", "2", "3"}},
 			wantStatus: http.StatusOK,
-			wantBody: map[string]interface{}{
-				"success":   true,
-				"processed": []int{0, 1, 2},
+			wantBody: envelope{
+				"success": true,
+				"results": []result{
+					{ID: "1", Success: true},
+					{ID: "2", Success: true},
+					{ID: "3", Success: true},
+				},
 			},
 		},
 		{
 			name:       "Empty IDs list",
 			input:      map[string][]string{"ids": {}},
 			wantStatus: http.StatusBadRequest,
+			wantBody: envelope{
+				"error":   "no IDs provided",
+				"success": false,
+				"results": []result{},
+			},
 		},
 		{
 			name:       "Invalid ID format",
 			input:      map[string][]string{"ids": {"1", "invalid", "3"}},
 			wantStatus: http.StatusBadRequest,
+			wantBody: envelope{
+				"success": false,
+				"results": []result{
+					{ID: "1", Success: true},
+					{ID: "invalid", Success: false, Error: "invalid ID"},
+					{ID: "3", Success: true},
+				},
+			},
+		},
+		{
+			name:       "Not found ID",
+			input:      map[string][]string{"ids": {"1", "999", "3"}},
+			wantStatus: http.StatusBadRequest,
+			wantBody: envelope{
+				"success": false,
+				"results": []result{
+					{ID: "1", Success: true},
+					{ID: "999", Success: false, Error: "not found"},
+					{ID: "3", Success: true},
+				},
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Convert the input map to JSON
 			inputJSON, err := json.Marshal(tt.input)
 			if err != nil {
 				t.Fatal(err)
 			}
 
+			// Create a new request with the input JSON
 			req := httptest.NewRequest(http.MethodDelete, "/v1/batch/todos", bytes.NewBuffer(inputJSON))
 			req.Header.Set("Content-Type", "application/json")
 
@@ -56,29 +96,25 @@ func TestDeleteTodosBatch(t *testing.T) {
 					status, tt.wantStatus)
 			}
 
-			if tt.wantBody != nil {
-				var got map[string]interface{}
-				err = json.NewDecoder(rr.Body).Decode(&got)
-				if err != nil {
-					t.Fatal(err)
-				}
+			// Decode the response into the expected response structure
+			var got batchResponse
+			err = json.NewDecoder(rr.Body).Decode(&got)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-				// Compare specific fields
-				if got["success"] != tt.wantBody["success"] {
-					t.Errorf("handler returned wrong success status: got %v want %v",
-						got["success"], tt.wantBody["success"])
-				}
+			// Convert the response to an envelope for comparison
+			gotEnvelope := envelope{
+				"success": got.Success,
+				"results": got.Results,
+			}
+			if got.Error != "" {
+				gotEnvelope["error"] = got.Error
+			}
 
-				// Compare processed arrays
-				gotProcessed, ok := got["processed"].([]interface{})
-				if !ok {
-					t.Fatal("processed field is not an array")
-				}
-				wantProcessed := tt.wantBody["processed"].([]int)
-				if len(gotProcessed) != len(wantProcessed) {
-					t.Errorf("handler returned wrong number of processed IDs: got %d want %d",
-						len(gotProcessed), len(wantProcessed))
-				}
+			if !reflect.DeepEqual(gotEnvelope, tt.wantBody) {
+				t.Errorf("handler returned wrong body\ngot: %#v\nwant: %#v",
+					gotEnvelope, tt.wantBody)
 			}
 		})
 	}
