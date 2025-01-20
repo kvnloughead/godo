@@ -18,52 +18,39 @@ func (tw testWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func newTestApplication(t *testing.T) *APIApplication {
+func newTestApplication(t *testing.T, testName string) *APIApplication {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// The first argument of NewResult (lastInsertId) is set to 0 because we
-	// don't need it. Success/failure is determined by the number of rows
-	// affected.
+	switch testName {
+	case "Valid batch delete":
+		// Expect all deletes to succeed
+		mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
+			WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
+		mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
+			WithArgs(2).WillReturnResult(sqlmock.NewResult(0, 1))
+		mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
+			WithArgs(3).WillReturnResult(sqlmock.NewResult(0, 1))
 
-	// Valid batch delete (IDs 1, 2, 3)
-	mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
-		WithArgs(1).
-		WillReturnResult(sqlmock.NewResult(0, 1))
+	case "Invalid ID format":
+		// Expect successful deletes for valid IDs (1 and 3)
+		// "invalid ID" won't reach the database
+		mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
+			WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
+		mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
+			WithArgs(3).WillReturnResult(sqlmock.NewResult(0, 1))
 
-	mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
-		WithArgs(2).
-		WillReturnResult(sqlmock.NewResult(0, 1))
-
-	mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
-		WithArgs(3).
-		WillReturnResult(sqlmock.NewResult(0, 1))
-
-	// Invalid ID format test (1, invalid, 3)
-	mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
-		WithArgs(1).
-		WillReturnResult(sqlmock.NewResult(0, 1))
-
-	// Note: "invalid" ID won't reach the database
-
-	mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
-		WithArgs(3).
-		WillReturnResult(sqlmock.NewResult(0, 1))
-
-	// Not found test (1, 999, 3)
-	mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
-		WithArgs(1).
-		WillReturnResult(sqlmock.NewResult(0, 1))
-
-	mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
-		WithArgs(999).
-		WillReturnResult(sqlmock.NewResult(0, 0))
-
-	mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
-		WithArgs(3).
-		WillReturnResult(sqlmock.NewResult(0, 1))
+	case "Not found ID":
+		// Expect successful delete for IDs 1 and 3 and not found for 999.
+		mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
+			WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
+		mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
+			WithArgs(999).WillReturnResult(sqlmock.NewResult(0, 0))
+		mock.ExpectExec("DELETE FROM todos WHERE id = \\$1").
+			WithArgs(3).WillReturnResult(sqlmock.NewResult(0, 1))
+	}
 
 	logger := slog.New(slog.NewTextHandler(testWriter{t}, nil))
 

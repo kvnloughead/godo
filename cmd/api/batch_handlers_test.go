@@ -17,8 +17,6 @@ type batchResponse struct {
 }
 
 func TestDeleteTodosBatch(t *testing.T) {
-	app := newTestApplication(t)
-
 	tests := []struct {
 		name       string
 		input      map[string][]string
@@ -78,6 +76,7 @@ func TestDeleteTodosBatch(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			app := newTestApplication(t, tt.name)
 			// Convert the input map to JSON
 			inputJSON, err := json.Marshal(tt.input)
 			if err != nil {
