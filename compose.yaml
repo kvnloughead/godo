@@ -1,0 +1,92 @@
+# Local development stack for the GoDo API.
+#
+#   cp .env.example .env
+#   docker compose up --build
+#
+# Services:
+#   db       Postgres, published on 127.0.0.1 only (for local psql)
+#   migrate  one-shot: applies all up migrations in db/migrations, then exits
+#   mailpit  local SMTP server + web UI that catches all outgoing email
+#   api      the JSON API (./cmd/api), started after migrations succeed
+#
+# For live reload with air, layer compose.dev.yaml on top (see `make docker/dev`).
+# All values come from .env; see .env.example for what each one does.
+
+name: godo
+
+x-db-url: &db-url postgres://${POSTGRES_USER:?set POSTGRES_USER in .env (cp .env.example .env)}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env (cp .env.example .env)}@db:5432/${POSTGRES_DB:?set POSTGRES_DB in .env (cp .env.example .env)}?sslmode=disable
+
+services:
+  db:
+    image: postgres:16.15-alpine3.24
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # Check over TCP: during first-time init Postgres only listens on its
+      # unix socket, so this stays unhealthy until the real server is up.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  migrate:
+    image: migrate/migrate:v4.19.1
+    volumes:
+      - ./db/migrations:/migrations:ro
+    command: ["-path=/migrations", "-database", *db-url, "up"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  mailpit:
+    image: axllent/mailpit:v1.31.6
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+
+  api:
+    build:
+      context: .
+      target: runtime
+    image: godo-api:local
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_started
+    environment:
+      DB_DSN: *db-url
+      # Mailpit accepts mail without auth. Set explicitly so a stray .env.local
+      # (loaded by the API in development mode) can't override them.
+      SMTP_USERNAME: ""
+      SMTP_PASSWORD: ""
+      SMTP_SENDER: ${SMTP_SENDER:-GoDo <no-reply@godo.localhost>}
+      DEBUG: ${DEBUG:-false}
+      VERBOSE: ${VERBOSE:-false}
+    # SMTP host/port and env are only configurable as flags.
+    command:
+      - -env=${API_ENV:-development}
+      - -port=4000
+      - -smtp-host=mailpit
+      - -smtp-port=1025
+      - -api-base-url=http://localhost:${API_PORT:-4000}
+    ports:
+      - "127.0.0.1:${API_PORT:-4000}:4000"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:4000/v1/healthcheck"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  pgdata:

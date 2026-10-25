@@ -10,3 +10,6 @@ build/
 
 # godo binary for development
 /godo
+
+# example env file is committed
+!.env.example

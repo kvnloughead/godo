@@ -1,0 +1,24 @@
+# Live-reload override for compose.yaml. Runs the API with air inside a Go
+# container, with the checkout bind-mounted at /app. Use it with:
+#
+#   docker compose -f compose.yaml -f compose.dev.yaml up --build
+#
+# or `make docker/dev`. Flags from compose.yaml's `command` are passed through
+# to the API binary. air writes its build output to ./tmp on the host.
+
+services:
+  api:
+    build:
+      target: dev
+    image: godo-api:dev
+    volumes:
+      - .:/app
+      - gomodcache:/go/pkg/mod
+      - gobuildcache:/root/.cache/go-build
+    healthcheck:
+      # The first build inside the container takes a while.
+      start_period: 120s
+
+volumes:
+  gomodcache:
+  gobuildcache:
