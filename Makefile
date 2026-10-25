@@ -207,7 +207,7 @@ deploy/psql:
 .PHONY: cli/build
 cli/build:
 	@echo 'Building CLI application...'
-	@go build -o godo cmd/cli/main.go
+	@go build -o godo cmd/godo/main.go
 
 ## cli/install: installs the CLI application
 .PHONY: cli/install
@@ -234,7 +234,7 @@ cli/setup-local:
 	fi
 	@if ! grep -q "alias gododev=" "${HOME}/.bashrc"; then \
 		echo '\n# alias for running godo from the project root with a local config file' >> ${HOME}/.bashrc; \
-		echo 'alias gododev='"'"'go run ./cmd/cli/main.go -c=${HOME}/.config/godo/settings.local.json'"'" >> ${HOME}/.bashrc; \
+		echo 'alias gododev='"'"'go run ./cmd/godo/main.go -c=${HOME}/.config/godo/settings.local.json'"'" >> ${HOME}/.bashrc; \
 		echo 'Added gododev alias to ~/.bashrc'; \
 	else \
 		echo 'gododev alias already exists in ~/.bashrc'; \

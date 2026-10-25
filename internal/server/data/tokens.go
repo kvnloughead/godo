@@ -7,7 +7,7 @@ import (
 	"encoding/base32"
 	"time"
 
-	validator "github.com/kvnloughead/godo/internal"
+	validator "github.com/kvnloughead/godo/internal/validator"
 )
 
 // Type Scope is a string type for token scopes. Valid scopes are Activation

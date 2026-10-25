@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kvnloughead/godo/cmd/cli/interactive"
-	"github.com/kvnloughead/godo/cmd/cli/types"
+	"github.com/kvnloughead/godo/cmd/godo/interactive"
+	"github.com/kvnloughead/godo/cmd/godo/types"
 	"github.com/spf13/cobra"
 )
 

@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	validator "github.com/kvnloughead/godo/internal"
-	"github.com/kvnloughead/godo/internal/data"
+	"github.com/kvnloughead/godo/internal/server/data"
+	validator "github.com/kvnloughead/godo/internal/validator"
 
 	"github.com/google/uuid"
 	"github.com/tomasen/realip"

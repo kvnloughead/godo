@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/kvnloughead/godo/cmd/cli/config"
-	"github.com/kvnloughead/godo/cmd/cli/token"
+	"github.com/kvnloughead/godo/cmd/godo/config"
+	"github.com/kvnloughead/godo/cmd/godo/token"
 	"github.com/kvnloughead/godo/internal/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"

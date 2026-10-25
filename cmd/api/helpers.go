@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
-	validator "github.com/kvnloughead/godo/internal"
+	validator "github.com/kvnloughead/godo/internal/validator"
 )
 
 // writeJSON marshals the data into JSON, then prepares and sends the response.
