@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"strings"
 
-	validator "github.com/kvnloughead/godo/internal"
+	validator "github.com/kvnloughead/godo/internal/validator"
 )
 
 // PaginationData is a struct that contains pagination data.

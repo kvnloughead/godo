@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kvnloughead/godo/cmd/cli/types"
+	"github.com/kvnloughead/godo/cmd/godo/types"
 )
 
 // Command represents an action that can be performed on an item. Each command

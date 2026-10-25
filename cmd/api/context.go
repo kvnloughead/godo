@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/kvnloughead/godo/internal/data"
+	"github.com/kvnloughead/godo/internal/server/data"
 )
 
 // The contextKey type is a custom string type for request context keys.

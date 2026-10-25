@@ -9,4 +9,4 @@ db/backup/
 build/
 
 # godo binary for development
-godo
+/godo

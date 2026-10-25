@@ -6,7 +6,7 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "${workspaceFolder}/cmd/cli/main.go",
+      "program": "${workspaceFolder}/cmd/godo/main.go",
       "args": ["add"] // Change this to the command you want to debug
     },
     {
@@ -14,7 +14,7 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "${workspaceFolder}/cmd/cli/main.go",
+      "program": "${workspaceFolder}/cmd/godo/main.go",
       "args": ["list"],
       "console": "integratedTerminal"
     }

@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"sync"
 
-	"github.com/kvnloughead/godo/internal/data"
 	"github.com/kvnloughead/godo/internal/mailer"
+	"github.com/kvnloughead/godo/internal/server/data"
 )
 
 // The application struct is used for dependency injection.

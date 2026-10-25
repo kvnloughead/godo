@@ -8,13 +8,13 @@ import (
 	"regexp"
 	"time"
 
-	validator "github.com/kvnloughead/godo/internal"
+	validator "github.com/kvnloughead/godo/internal/validator"
 	"github.com/lib/pq"
 )
 
 // Todo is a struct representing data for a single todo entry. It is intended to
 // be compatible with todo.txt syntax (http://todotxt.org/). How this syntax
-// maps to a Todo document will be covered in cmd/cli.
+// maps to a Todo document will be covered in cmd/godo.
 type Todo struct {
 	ID        int64     `json:"id"`
 	UserID    int64     `json:"user_id"`

@@ -6,7 +6,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
-	"github.com/kvnloughead/godo/internal/data"
+	"github.com/kvnloughead/godo/internal/server/data"
 )
 
 // The routes function initializes and returns an http.Handler with all the

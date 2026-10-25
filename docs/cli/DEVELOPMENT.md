@@ -56,7 +56,7 @@ For managing multiple environments, you can set up an alias for the CLI:
 
 ```bash
 # An alias for running godo from the project root with a local config file
-alias gododev='go run ./cmd/cli/main.go -config=${HOME}/.config/godo/settings.local.json'
+alias gododev='go run ./cmd/godo/main.go -config=${HOME}/.config/godo/settings.local.json'
 ```
 
 Then use it just like the regular CLI:
@@ -95,7 +95,7 @@ make cli/logs
 ## Project Structure
 
 ```
-cmd/cli/
+cmd/godo/
 ├── cmd/            # Command implementations
 │   ├── root.go     # Base command and app initialization
 │   ├── add.go      # Add todo command
@@ -107,7 +107,7 @@ cmd/cli/
 
 ## Adding New Commands
 
-1. Create a new command file in `cmd/cli/cmd/`:
+1. Create a new command file in `cmd/godo/cmd/`:
 
    ```bash
    cobra add [command-name]
