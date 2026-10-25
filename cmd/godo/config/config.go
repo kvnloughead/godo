@@ -10,10 +10,23 @@ import (
 const (
 	defaultConfigFile = "settings.json"
 	defaultAPIBaseURL = "http://godo.kevinloughead.com/v1"
+	defaultMode       = ModeOnline
+)
+
+// Modes select the store.Store implementation. See docs/SPEC.md.
+const (
+	ModeLocal  = "local"  // read and write todo.txt, sync in the background
+	ModeOnline = "online" // call the API for every operation
 )
 
 type Config struct {
 	APIBaseURL string `json:"api_base_url"`
+
+	// Mode is ModeLocal or ModeOnline.
+	Mode string `json:"mode"`
+
+	// TodoDir is the directory holding todo.txt and done.txt in local mode.
+	TodoDir string `json:"todo_dir,omitempty"`
 }
 
 // LoadConfig loads the configuration file for the CLI. The config file is
@@ -25,6 +38,7 @@ func LoadConfig(cfgFile string, logger *slog.Logger) (Config, error) {
 	// Default configuration
 	config := Config{
 		APIBaseURL: defaultAPIBaseURL,
+		Mode:       defaultMode,
 	}
 
 	configDir := filepath.Join(os.Getenv("HOME"), ".config", "godo")
@@ -76,6 +90,7 @@ func EnsureConfigFile(cfgFile string) error {
 	// Create default settings.json
 	defaultConfig := Config{
 		APIBaseURL: defaultAPIBaseURL,
+		Mode:       defaultMode,
 	}
 	data, err := json.MarshalIndent(defaultConfig, "", "    ")
 	if err != nil {
