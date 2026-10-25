@@ -2,6 +2,8 @@
 
 These instructions are for preparing a server to run a Go application that uses PostgreSQL.
 
+For local development you don't need any of this. See [SETUP.md](SETUP.md), which runs everything with Docker.
+
 ## Minimum Server Requirements
 
 - Ubuntu 22.04 LTS
