@@ -1,13 +1,13 @@
 ifdef ENV
 	ifeq ($(ENV), production)
-		include .env.production
+		-include .env.production
 		PGHOST=34.134.133.227
 	else
-		include .env.local
+		-include .env.local
 		PGHOST=localhost
 	endif
 else
-	include .env.local
+	-include .env.local
 	PGHOST=localhost
 endif
 
@@ -31,6 +31,17 @@ help:
 .PHONY: help/web
 help/web:
 	@go run ./cmd/api -help
+
+## setup: install the git pre-commit hook (run once per clone)
+.PHONY: setup
+setup:
+	@git config core.hooksPath .githooks
+	@echo 'Installed pre-commit hook from .githooks/'
+
+## ci: run the CI checks (gofmt, vet, build, test)
+.PHONY: ci
+ci:
+	@./scripts/ci.sh
 
 .PHONY: confirm
 confirm:

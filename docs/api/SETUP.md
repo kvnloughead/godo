@@ -14,6 +14,18 @@
    go install github.com/air-verse/air@latest
    ```
 
+## Pre-commit Hook
+
+Run this once after cloning:
+
+```bash
+make setup
+```
+
+This points git at the hooks in `.githooks/`. The pre-commit hook runs `scripts/ci.sh`, which is the same set of checks CI runs: `gofmt`, `go vet`, `go build`, and `go test -race`. If a check fails, the commit is aborted. To skip the hook for a single commit, use `git commit --no-verify`.
+
+You can run the checks yourself at any time with `make ci`.
+
 ## Local Development Setup
 
 1. Configure PostgreSQL authentication in `/etc/postgresql/*/main/pg_hba.conf`:

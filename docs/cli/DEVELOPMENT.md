@@ -12,6 +12,8 @@ This will build and install the `godo` command to `/usr/local/bin`.
 
 ## Development
 
+Run `make setup` once after cloning to install the pre-commit hook. See [Pre-commit Hook](../api/SETUP.md#pre-commit-hook) for details.
+
 ### Building Locally
 
 To build without installing:

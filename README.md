@@ -12,6 +12,10 @@ A todo tracking application written in Go. Features will eventually include:
 - See [docs/cli/COMMANDS.md](./docs/cli/COMMANDS.md) for a list of commands.
 - See [docs/api/ENDPOINTS.md](./docs/api/ENDPOINTS.md) for a list of API endpoints.
 
+## Checks and CI
+
+[`scripts/ci.sh`](./scripts/ci.sh) runs `gofmt`, `go vet`, `go build`, and `go test -race`. GitHub Actions runs it on every push to `main` and on every pull request targeting `main` ([.github/workflows/ci.yml](./.github/workflows/ci.yml)). Run `make setup` once after cloning to install a pre-commit hook that runs the same script, or run `make ci` by hand.
+
 ## Limitations
 
 - Todo.txt style parsing is not implemented, so the context and projects fields are not filled. However searching by context and project is handled by text searches starting with `@` or `+`.

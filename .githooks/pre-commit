@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Runs the same checks as CI before each commit. Install with make setup.
+# Skip once with git commit --no-verify.
+exec "$(git rev-parse --show-toplevel)/scripts/ci.sh"
