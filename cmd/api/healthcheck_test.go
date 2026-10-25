@@ -2,27 +2,18 @@ package main
 
 import (
 	"encoding/json"
-	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/kvnloughead/godo/internal/assert"
-	"github.com/kvnloughead/godo/internal/injector"
 )
 
 func TestHealthcheck(t *testing.T) {
 
-	baseApp := injector.NewApplication(
-		injector.Config{Env: "testing"},
-		slog.New(slog.NewTextHandler(io.Discard, nil)),
-		nil,
-	)
+	_, routes := newTestApp(t)
 
-	app := NewAPIApplication(baseApp)
-
-	ts := httptest.NewServer(app.Routes())
+	ts := httptest.NewServer(routes)
 	defer ts.Close()
 
 	rs, err := ts.Client().Get(ts.URL + "/v1/healthcheck")
