@@ -16,6 +16,8 @@ A todo tracking application written in Go. Features will eventually include:
 
 [`scripts/ci.sh`](./scripts/ci.sh) runs `gofmt`, `go vet`, `go build`, and `go test -race`. GitHub Actions runs it on every push to `main` and on every pull request targeting `main` ([.github/workflows/ci.yml](./.github/workflows/ci.yml)). Run `make setup` once after cloning to install a pre-commit hook that runs the same script, or run `make ci` by hand.
 
+Integration tests run against Postgres when `GODO_TEST_DB_DSN` is set, and are skipped otherwise. CI provides a database for them. See [docs/api/TESTING.md](./docs/api/TESTING.md).
+
 ## Limitations
 
 - Todo.txt style parsing is not implemented, so the context and projects fields are not filled. However searching by context and project is handled by text searches starting with `@` or `+`.

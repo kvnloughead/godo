@@ -9,9 +9,43 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+
+    # A throwaway Postgres for the integration tests. See docs/api/TESTING.md.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: godo
+          POSTGRES_PASSWORD: godo
+          POSTGRES_DB: godo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U godo -d godo_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      GODO_TEST_DB_DSN: postgres://godo:godo@localhost:5432/godo_test?sslmode=disable
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+
+      - name: Install migrate
+        run: go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.17.1
+
+      # Apply every migration, roll them all back, and apply them again, so a
+      # broken down migration fails CI too.
+      - name: Apply migrations
+        run: |
+          migrate -path ./db/migrations -database "$GODO_TEST_DB_DSN" up
+          migrate -path ./db/migrations -database "$GODO_TEST_DB_DSN" down -all
+          migrate -path ./db/migrations -database "$GODO_TEST_DB_DSN" up
+
+      # ci.sh runs go test ./..., which includes the integration tests because
+      # GODO_TEST_DB_DSN is set.
       - run: ./scripts/ci.sh
