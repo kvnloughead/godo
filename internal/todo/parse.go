@@ -22,41 +22,51 @@ var (
 // format is described here :https://github.com/todotxt/todo.txt#todotxt-format-rules)
 //
 // Parse never sets Archived or Version, since neither is encoded in the line.
-// It returns an error if the line is blank or a GoDo tag is malformed (for
-// example, a mod: value that isn't an RFC 3339 timestamp).
+// It returns an error if the description is empty. Projects, contexts, and
+// user supplied tags count as part of the description.
+//
+// It also returns an error if a GoDo tag is malformed (for example, a mod:
+// value that isn't an RFC 3339 timestamp).
 //
 // Formatting the result with String must reproduce the input line, apart from
 // moving id: and mod: to the end and normalizing whitespace.
 func Parse(line string) (Todo, error) {
-	if line == "" {
-		return Todo{}, errors.New("todo must not be an empty string")
-	}
-
 	words := strings.Fields(line)
 	todo := Todo{}
 
-	if words[0] == "x" {
+	// first returns the first word in words or "" if words is empty
+	first := func() string {
+		if len(words) == 0 {
+			return ""
+		}
+		return words[0]
+	}
+
+	if first() == "x" {
 		todo.Completed = true
 		words = words[1:]
 	}
 
-	if priorityRegex.MatchString(words[0]) {
+	if priorityRegex.MatchString(first()) {
 		todo.Priority = string(words[0][1])
 		words = words[1:]
 	}
 
-	if t1, ok := ParseDate(words[0], todoTxtDateLayout); ok {
-		if t2, ok := ParseDate(words[1], todoTxtDateLayout); ok {
+	if t1, ok := ParseDate(first(), todoTxtDateLayout); ok {
+		words = words[1:]
+		if t2, ok := ParseDate(first(), todoTxtDateLayout); ok {
 			if t1.Before(t2) {
 				return Todo{}, errors.New("Creation date must come before completion date.")
 			}
 			todo.CompletedAt = t1
 			todo.CreatedAt = t2
-			words = words[2:]
+			words = words[1:]
 		} else {
 			todo.CreatedAt = t1
-			words = words[1:]
 		}
+	}
+	if len(words) == 0 {
+		return Todo{}, errors.New("Description must not be empty.")
 	}
 
 	plainWords := []string{}

@@ -87,6 +87,18 @@ func TestParse(t *testing.T) {
 
 	testParseWithDates(t)
 	testParseWithProjectsTagsAndContexts(t)
+	testParseWithEmptyDescription(t)
+}
+
+func testParseWithEmptyDescription(t *testing.T) {
+	cases := []string{
+		"", " ", " x", "x (B)", "(B) 2025-02-01", "x 2025-02-01  2025-01-01",
+	}
+
+	for _, s := range cases {
+		_, err := Parse(s)
+		assert.EqualError(t, err, "Description must not be empty.")
+	}
 }
 
 func testParseWithDates(t *testing.T) {
