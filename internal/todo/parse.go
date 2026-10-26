@@ -1,6 +1,20 @@
 package todo
 
-// Parse parses a single todo.txt line, including GoDo's id: and mod: tags.
+import (
+	"errors"
+	"regexp"
+	"strings"
+)
+
+var (
+	priorityRegex = regexp.MustCompile(`\([A-Z]\)`)
+	projectRegex  = regexp.MustCompile(`\+\S+`)
+	contextRegex  = regexp.MustCompile(`@\S+`)
+	tagRegex      = regexp.MustCompile(`[a-zA-Z1-9]:\S+`)
+)
+
+// Parse parses a single todo.txt line, including GoDo's id: and mod: tags. The
+// format is described here :https://github.com/todotxt/todo.txt#todotxt-format-rules)
 //
 // Parse never sets Archived or Version, since neither is encoded in the line.
 // It returns an error if the line is blank or a GoDo tag is malformed (for
@@ -9,7 +23,59 @@ package todo
 // Formatting the result with String must reproduce the input line, apart from
 // moving id: and mod: to the end and normalizing whitespace.
 func Parse(line string) (Todo, error) {
-	panic("todo.Parse: not implemented")
+	if line == "" {
+		return Todo{}, errors.New("todo must not be an empty string")
+	}
+
+	words := strings.Fields(line)
+	todo := Todo{}
+
+	if words[0] == "x" {
+		todo.Completed = true
+		words = words[1:]
+	}
+
+	if priorityRegex.MatchString(words[0]) {
+		todo.Priority = string(words[0][1])
+		words = words[1:]
+	}
+
+	if t1, ok := ParseDate(words[0], "2006-01-02"); ok {
+		if t2, ok := ParseDate(words[1], "2006-01-02"); ok {
+			if t1.Before(t2) {
+				return Todo{}, errors.New("Creation date must come before completion date.")
+			}
+			todo.CompletedAt = t1
+			todo.CreatedAt = t2
+			words = words[2:]
+		} else {
+			todo.CreatedAt = t1
+			words = words[1:]
+		}
+	}
+
+	plainWords := []string{}
+	tags := map[string]string{}
+	for _, word := range words {
+		if projectRegex.MatchString(word) {
+			todo.Projects = append(todo.Projects, word[1:])
+		} else if contextRegex.MatchString(word) {
+			todo.Contexts = append(todo.Contexts, word[1:])
+		} else if tagRegex.MatchString(word) {
+			split := strings.Split(word, ":")
+			tags[split[0]] = split[1]
+		} else {
+			plainWords = append(plainWords, word)
+		}
+	}
+
+	if len(tags) != 0 {
+		todo.Tags = tags
+	}
+
+	todo.Description = strings.Join(plainWords, " ")
+
+	return todo, nil
 }
 
 // Line formats t as a todo.txt line without the id: and mod: tags. This is the
