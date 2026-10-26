@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/go-playground/assert/v2"
+	"github.com/stretchr/testify/assert"
 )
 
 // TestLoadConfig tests loading configuration via environment variables and
