@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 )
 
 var (
@@ -86,15 +87,31 @@ func Parse(line string) (Todo, error) {
 	return todo, nil
 }
 
+// Returns the string representation of a todo's tags, with one
+// leading whitespace.
+func (t Todo) TagString() string {
+	nTags := len(t.Tags)
+	if len(t.Tags) == 0 {
+		return ""
+	}
+
+	keys := make([]string, 0, nTags)
+	for k := range t.Tags {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	result := ""
+	for _, k := range keys {
+		result = result + fmt.Sprintf(" %s:%s", k, t.Tags[k])
+	}
+
+	return result
+}
+
 // Line formats t as a todo.txt line without the id: and mod: tags. This is the
 // form sent over the wire in sync requests.
 func (t Todo) Line() string {
-	panic("todo.Line: not implemented")
-}
-
-// String formats t as a full todo.txt line, with id: and mod: appended when
-// they are set. This is the form written to todo.txt and done.txt.
-func (t Todo) String() string {
 	prefix := ""
 
 	if t.Completed {
@@ -123,22 +140,11 @@ func (t Todo) String() string {
 	return result
 }
 
-func (t Todo) TagString() string {
-	nTags := len(t.Tags)
-	if len(t.Tags) == 0 {
-		return ""
-	}
-
-	keys := make([]string, 0, nTags)
-	for k := range t.Tags {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	result := ""
-	for _, k := range keys {
-		result = result + fmt.Sprintf(" %s:%s", k, t.Tags[k])
-	}
-
+// String formats t as a full todo.txt line plus including id: and mod:. This
+// is the form written to todo.txt and done.txt.
+func (t Todo) String() string {
+	result := t.Line()
+	result += " mod:" + t.Mod.Format(time.RFC3339)
+	result += " id:" + t.ID
 	return result
 }
