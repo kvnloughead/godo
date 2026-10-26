@@ -1,6 +1,7 @@
 package todo
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -86,6 +87,7 @@ func TestParse(t *testing.T) {
 
 	testParseWithDates(t)
 	testParseWithProjectsTagsAndContexts(t)
+	testString(t)
 }
 
 func testParseWithProjectsTagsAndContexts(t *testing.T) {
@@ -157,19 +159,31 @@ func testParseWithProjectsTagsAndContexts(t *testing.T) {
 	}
 }
 
-func testParseWithDates(t *testing.T) {
+var (
+	completedAtString = "2026-02-02"
+	createdAtString   = "2026-01-02"
+)
+
+func computeExpectedDates() (time.Time, time.Time, error) {
 	layout := "2006-01-02"
-	createdAtString := "2026-01-02"
 
 	expectedCreatedAt, err := time.Parse(layout, createdAtString)
 	if err != nil {
-		t.Fatalf("Failed to parse time: layout='%s' dateStr='%s", layout, createdAtString)
+		return time.Time{}, time.Time{}, fmt.Errorf(fmt.Sprintf("Failed to parse time: layout='%s' dateStr='%s", layout, createdAtString))
 	}
 
-	completedAtString := "2026-02-02"
 	expectedCompletedAt, err := time.Parse(layout, completedAtString)
 	if err != nil {
-		t.Fatalf("Failed to parse time: layout='%s' dateStr='%s", layout, completedAtString)
+		return time.Time{}, time.Time{}, fmt.Errorf(fmt.Sprintf("Failed to parse time: layout='%s' dateStr='%s", layout, completedAtString))
+	}
+
+	return expectedCompletedAt, expectedCreatedAt, nil
+}
+
+func testParseWithDates(t *testing.T) {
+	expectedCompletedAt, expectedCreatedAt, err := computeExpectedDates()
+	if err != nil {
+		t.Fatalf(err.Error())
 	}
 
 	happyTests := []struct {
@@ -236,6 +250,84 @@ func testParseWithDates(t *testing.T) {
 			if err == nil {
 				t.Fatalf("Expected an error, got nil")
 			}
+		})
+	}
+}
+
+func testTagString(t *testing.T) {
+	tests := []struct {
+		description string
+		todo        Todo
+		expected    string
+		repeat      int
+	}{
+		{
+			description: "No tags returns an empty string",
+			todo:        Todo{},
+			expected:    "",
+		},
+		{
+			description: "Single tag",
+			todo: Todo{
+				Tags: map[string]string{"foo": "bar"},
+			},
+			expected: " foo:bar",
+		},
+		{
+			description: "Lexicographic order is preserved",
+			todo: Todo{
+				Tags: map[string]string{"a": "a", "z": "z", "b": "b", "y": "y", "c": "c", "x": "x"},
+			},
+			expected: " a:a b:b c:c x:x y:y z:z",
+			repeat:   9,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			reps := tt.repeat + 1
+			for range reps {
+				actual := tt.todo.TagString()
+				assert.Equal(t, tt.expected, actual)
+			}
+		})
+	}
+}
+
+func testString(t *testing.T) {
+	expectedCompletedAt, expectedCreatedAt, err := computeExpectedDates()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	tests := []struct {
+		description string
+		todo        Todo
+		expected    string
+	}{
+		{
+			description: "",
+			todo: Todo{
+				Priority:    "M",
+				Description: "do something",
+				CompletedAt: expectedCompletedAt,
+				CreatedAt:   expectedCreatedAt,
+				Projects:    []string{"foo", "bar"},
+				Contexts:    []string{"con1", "con2"},
+				Tags:        map[string]string{"due": "tuesday", "foo": "bar"},
+			},
+			expected: fmt.Sprintf("(M) %s %s do something +foo +bar @con1 @con2 due:tuesday foo:bar", completedAtString, createdAtString),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			actual := tt.todo.String()
+			assert.Equal(t, tt.expected, actual)
+
+			tt.todo.Completed = true
+			actual = tt.todo.String()
+			assert.Equal(t, fmt.Sprintf("x %s", tt.expected), actual)
 		})
 	}
 }

@@ -2,7 +2,9 @@ package todo
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -11,6 +13,8 @@ var (
 	projectRegex  = regexp.MustCompile(`\+\S+`)
 	contextRegex  = regexp.MustCompile(`@\S+`)
 	tagRegex      = regexp.MustCompile(`[a-zA-Z1-9]:\S+`)
+
+	todoTxtDateLayout = "2006-01-02"
 )
 
 // Parse parses a single todo.txt line, including GoDo's id: and mod: tags. The
@@ -40,8 +44,8 @@ func Parse(line string) (Todo, error) {
 		words = words[1:]
 	}
 
-	if t1, ok := ParseDate(words[0], "2006-01-02"); ok {
-		if t2, ok := ParseDate(words[1], "2006-01-02"); ok {
+	if t1, ok := ParseDate(words[0], todoTxtDateLayout); ok {
+		if t2, ok := ParseDate(words[1], todoTxtDateLayout); ok {
 			if t1.Before(t2) {
 				return Todo{}, errors.New("Creation date must come before completion date.")
 			}
@@ -91,5 +95,50 @@ func (t Todo) Line() string {
 // String formats t as a full todo.txt line, with id: and mod: appended when
 // they are set. This is the form written to todo.txt and done.txt.
 func (t Todo) String() string {
-	panic("todo.String: not implemented")
+	prefix := ""
+
+	if t.Completed {
+		prefix += "x "
+	}
+	if t.Priority != "" {
+		prefix += fmt.Sprintf("(%s) ", t.Priority)
+	}
+	if !t.CompletedAt.IsZero() {
+		prefix += t.CompletedAt.Format(todoTxtDateLayout) + " "
+	}
+	if !t.CreatedAt.IsZero() {
+		prefix += t.CreatedAt.Format(todoTxtDateLayout) + " "
+	}
+
+	result := prefix + t.Description
+
+	for _, p := range t.Projects {
+		result = result + " +" + p
+	}
+	for _, c := range t.Contexts {
+		result = result + " @" + c
+	}
+	result += t.TagString()
+
+	return result
+}
+
+func (t Todo) TagString() string {
+	nTags := len(t.Tags)
+	if len(t.Tags) == 0 {
+		return ""
+	}
+
+	keys := make([]string, 0, nTags)
+	for k := range t.Tags {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	result := ""
+	for _, k := range keys {
+		result = result + fmt.Sprintf(" %s:%s", k, t.Tags[k])
+	}
+
+	return result
 }
