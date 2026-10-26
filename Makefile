@@ -48,6 +48,60 @@ confirm:
 	@echo -n 'Are you sure? [y/N] ' && read ans && [ $${ans:-N} = y ]
 
 # ============================================================
+# DOCKER (local development stack: compose.yaml)
+# ============================================================
+
+COMPOSE_DEV = docker compose -f compose.yaml -f compose.dev.yaml
+
+# Create .env from the example on first use.
+.env:
+	@cp .env.example .env
+	@echo 'Created .env from .env.example'
+
+## docker/up: build and start Postgres, migrations, Mailpit, and the API in the background
+.PHONY: docker/up
+docker/up: .env
+	@docker compose up --build --detach
+	@echo "API:     http://$$(docker compose port api 4000)/v1/healthcheck"
+	@echo "Mailpit: http://$$(docker compose port mailpit 8025)"
+
+## docker/dev: run the stack in the foreground with the API under air (live reload)
+.PHONY: docker/dev
+docker/dev: .env
+	@$(COMPOSE_DEV) up --build
+
+## docker/down: stop and remove the containers (keeps the database volume)
+.PHONY: docker/down
+docker/down:
+	@docker compose down
+
+## docker/logs service=$1: follow logs for all services, or just one (e.g. service=api)
+.PHONY: docker/logs
+docker/logs:
+	@docker compose logs --follow ${service}
+
+## docker/ps: list the stack's containers and their health
+.PHONY: docker/ps
+docker/ps:
+	@docker compose ps --all
+
+## docker/psql: open psql inside the Postgres container
+.PHONY: docker/psql
+docker/psql:
+	@docker compose exec db sh -c 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
+
+## docker/migrate: apply any new 'up' migrations to the Docker database
+.PHONY: docker/migrate
+docker/migrate:
+	@docker compose run --rm migrate
+
+## docker/reset: stop the stack and delete the database volume (destructive!)
+.PHONY: docker/reset
+docker/reset: confirm
+	@docker compose down --volumes
+	@echo 'Database volume removed. Run make docker/up to start fresh.'
+
+# ============================================================
 # API DEVELOPMENT
 # ============================================================
 
@@ -83,23 +137,6 @@ db/setup: confirm
 # ============================================================
 # DATABASE MANAGEMENT
 # ============================================================
-
-## db/drop: drop database and user (destructive!)
-.PHONY: db/drop
-db/drop: confirm
-	@echo 'Dropping database and user...'
-	@sudo cp db/scripts/drop.sql /tmp/db_drop.sql
-	@echo "Setting permissions..."
-	@sudo chown postgres:postgres /tmp/db_drop.sql
-	@echo "Running drop script..."
-	@cd /tmp && sudo -u postgres psql \
-		-v db_name=$(DB_NAME) \
-		-v db_user=$(DB_USER) \
-		-v ON_ERROR_STOP=1 \
-		-f /tmp/db_drop.sql
-	@echo "Cleaning up..."
-	@sudo rm /tmp/db_drop.sql
-	@echo 'Database and user dropped.'
 
 ## db/psql: connect the the database using psql
 .PHONY: db/psql

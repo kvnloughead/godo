@@ -436,9 +436,16 @@ type requestContext struct {
 	requestID  string // unique identifier for request tracing
 }
 
+// healthcheckPath is polled by container healthchecks and monitors, so
+// successful requests to it aren't logged.
+const healthcheckPath = "/v1/healthcheck"
+
 // The contextualizeRequest middleware initializes a requestContext struct at
 // the start of the request, and stores it in the request context. It also
 // creates a response writer wrapper to capture the response's status code.
+//
+// Requests are logged when they start and complete, except for healthchecks,
+// which are logged only if they fail.
 func (app *APIApplication) contextualizeRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := &requestContext{
@@ -447,11 +454,15 @@ func (app *APIApplication) contextualizeRequest(next http.Handler) http.Handler 
 			requestID: uuid.New().String(),
 		}
 
-		app.Logger.Info("request started",
-			"request_id", ctx.requestID,
-			"method", r.Method,
-			"uri", r.URL.RequestURI(),
-		)
+		isHealthcheck := r.URL.Path == healthcheckPath
+
+		if !isHealthcheck {
+			app.Logger.Info("request started",
+				"request_id", ctx.requestID,
+				"method", r.Method,
+				"uri", r.URL.RequestURI(),
+			)
+		}
 
 		// Store our request context
 		r = r.WithContext(context.WithValue(r.Context(), requestContextKey, ctx))
@@ -473,6 +484,10 @@ func (app *APIApplication) contextualizeRequest(next http.Handler) http.Handler 
 		ctx.duration = time.Since(ctx.start)
 		ctx.statusCode = rw.statusCode
 		ctx.authStatus = authStatus
+
+		if isHealthcheck && ctx.statusCode == http.StatusOK {
+			return
+		}
 
 		app.Logger.Info("request completed",
 			"request_id", ctx.requestID,

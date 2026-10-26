@@ -289,9 +289,15 @@ godo/
 │       ├── backend/          # transport adapter: http.ts (web) | wails.ts (desktop bindings)
 │       └── ...
 ├── db/migrations/
-├── deploy/                   # Dockerfile, compose.yaml, deployment config
-└── docs/
+├── deploy/                   # production deployment config
+├── docs/
+├── Dockerfile                # API image: build, dev (air), and runtime stages
+├── compose.yaml              # local stack: Postgres, migrations, Mailpit, API
+├── compose.dev.yaml          # override: run the API under air with the checkout mounted
+└── .env.example              # dev defaults for compose; copy to .env
 ```
+
+`Dockerfile` and the compose files live at the repo root so that `docker compose up` works from a fresh checkout with no `-f` flags.
 
 Notes:
 

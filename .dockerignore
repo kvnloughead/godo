@@ -1,0 +1,17 @@
+.git
+.github
+.githooks
+.vscode
+.claude
+.env
+.env.*
+.envrc
+bin/
+build/
+tmp/
+db/backup/
+docs/
+/godo
+**/node_modules
+Dockerfile
+compose*.yaml

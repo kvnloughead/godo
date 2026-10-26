@@ -1,18 +1,83 @@
 # Setup
 
-## Prerequisites
+There are two ways to run the API locally:
 
-1. Install PostgreSQL and the `psql` CLI tool
-2. Install the `migrate` CLI tool:
-   ```bash
-   go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-   ```
-3. Install `air`:
-   This enables the `make run/air` target to automatically restart the API
-   server when code changes are detected.
-   ```bash
-   go install github.com/air-verse/air@latest
-   ```
+- **With Docker (recommended).** One command starts Postgres, runs the migrations, starts a local mail catcher, and starts the API. You don't need to install Postgres or edit `pg_hba.conf`.
+- **Without Docker.** You install and configure Postgres yourself. See [Setup without Docker](#setup-without-docker).
+
+## Setup with Docker
+
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) with Compose v2 (`docker compose version` should work). Docker Desktop includes both.
+- Go, only if you want to run `make ci`, build the CLI, or run the API outside Docker.
+
+### First run on a new device
+
+```bash
+git clone git@github.com:kvnloughead/godo.git
+cd godo
+make setup                 # install the pre-commit hook (see below)
+cp .env.example .env       # dev defaults; edit if you like
+docker compose up --build
+```
+
+`make docker/up` does the same in the background (and creates `.env` from the example if it doesn't exist).
+
+When it's up:
+
+| What               | Where                                      |
+| ------------------ | ------------------------------------------ |
+| API                | http://localhost:4000/v1/healthcheck       |
+| Mailpit (email UI) | http://localhost:8025                      |
+| Postgres           | `localhost:5433`, or just run `make docker/psql` |
+
+All ports are bound to `127.0.0.1`, so nothing is reachable from the rest of your network. If a port is already taken (for example by a Postgres installed on the host), change `POSTGRES_HOST_PORT`, `API_PORT`, or `MAILPIT_UI_PORT` in `.env`.
+
+### What runs
+
+`compose.yaml` defines four services, started in this order:
+
+1. `db`: Postgres 16. Data lives in the `pgdata` named volume, so it survives restarts. The database and user from `.env` are created the first time the volume is empty.
+2. `migrate`: a one-shot [golang-migrate](https://github.com/golang-migrate/migrate) container that runs every up migration in `db/migrations` and exits. It waits for `db` to be healthy.
+3. `mailpit`: [Mailpit](https://mailpit.axllent.org/), an SMTP server that catches every email the API sends and shows it in a web UI. Registration and activation emails work offline, with no Mailtrap account.
+4. `api`: the API, built from the `Dockerfile`. It starts only after `migrate` finishes successfully.
+
+### Trying it out
+
+```bash
+curl localhost:4000/v1/healthcheck
+
+curl -X POST localhost:4000/v1/users \
+  -d '{"name": "Alice", "email": "alice@example.com", "password": "pa55word1234"}'
+```
+
+Open http://localhost:8025 to read the welcome email and get the activation token.
+
+To point the CLI at the local API, run `make cli/setup-local`. It writes `~/.config/godo/settings.local.json` with `http://localhost:4000/v1`.
+
+### Everyday commands
+
+| Command                       | What it does                                                  |
+| ----------------------------- | ------------------------------------------------------------- |
+| `make docker/up`              | Build and start everything in the background                  |
+| `make docker/dev`             | Same, but runs the API under `air` and rebuilds on code changes |
+| `make docker/down`            | Stop and remove the containers (the database is kept)         |
+| `make docker/logs`            | Follow all logs, or one service: `make docker/logs service=api` |
+| `make docker/ps`              | Show containers and their health                              |
+| `make docker/psql`            | Open `psql` inside the Postgres container                     |
+| `make docker/migrate`         | Apply new up migrations (after `make db/migrations/new`)      |
+| `make docker/reset`           | Delete the database volume and start over (asks to confirm)   |
+
+After changing Go code, `make docker/up` rebuilds the image. With `make docker/dev`, the checkout is mounted into a Go container and `air` rebuilds the API when files change. The dev image is defined by the `dev` stage of the `Dockerfile` and `compose.dev.yaml`.
+
+### Configuration
+
+Everything comes from `.env`, which Compose reads automatically. See `.env.example` for each setting. `.env` is gitignored. The API gets its settings as environment variables and flags in the `api` service of `compose.yaml`. Run `make help/web` to see all flags.
+
+### Email
+
+Registration and activation emails go to Mailpit at http://localhost:8025. The sender address comes from `SMTP_SENDER` in `.env`. If it's unset outside production, the API derives a sender from the Go module path, or uses `GoDo <no-reply@godo.localhost>` when the Go toolchain isn't available.
 
 ## Pre-commit Hook
 
@@ -26,7 +91,25 @@ This points git at the hooks in `.githooks/`. The pre-commit hook runs `scripts/
 
 You can run the checks yourself at any time with `make ci`.
 
-## Local Development Setup
+## Setup without Docker
+
+Use this if you'd rather run Postgres and the API directly on your machine.
+
+### Prerequisites
+
+1. Install PostgreSQL and the `psql` CLI tool
+2. Install the `migrate` CLI tool:
+   ```bash
+   go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+   ```
+3. Install `air`:
+   This enables the `make run/air` target to automatically restart the API
+   server when code changes are detected.
+   ```bash
+   go install github.com/air-verse/air@latest
+   ```
+
+### Local Development Setup
 
 1. Configure PostgreSQL authentication in `/etc/postgresql/*/main/pg_hba.conf`:
 
@@ -63,8 +146,12 @@ You can run the checks yourself at any time with `make ci`.
    3. Click on your inbox
    4. Find the SMTP credentials in the "SMTP Settings" section
 
+   Note: the API reads the SMTP host and port only from the `-smtp-host` and `-smtp-port` flags, not from `SMTP_HOST` and `SMTP_PORT`. Pass them with `make FLAGS="-smtp-host=sandbox.smtp.mailtrap.io -smtp-port=2525" run/api`.
+
 3. Setup database and run migrations:
    ```bash
    make db/setup
    make db/migrations/up
    ```
+
+4. Run the API with `make run/api`, or with live reload using `make run/air`.
