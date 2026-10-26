@@ -73,6 +73,10 @@ func Parse(line string) (Todo, error) {
 		todo.Tags = tags
 	}
 
+	if len(plainWords) == 0 {
+		return Todo{}, errors.New("Todo text must not be empty.")
+	}
+
 	todo.Description = strings.Join(plainWords, " ")
 
 	return todo, nil

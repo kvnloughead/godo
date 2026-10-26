@@ -68,6 +68,10 @@ func TestParse(t *testing.T) {
 			description: "Returns an error on empty string",
 			line:        "",
 		},
+		{
+			description: "Returns an error on with no plain todo text",
+			line:        "x (A) +foo @bar",
+		},
 	}
 
 	for _, tt := range errorTests {
