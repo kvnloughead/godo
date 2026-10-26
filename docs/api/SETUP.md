@@ -30,7 +30,7 @@ When it's up:
 | ------------------ | ------------------------------------------ |
 | API                | http://localhost:4000/v1/healthcheck       |
 | Mailpit (email UI) | http://localhost:8025                      |
-| Postgres           | `localhost:5432`, or just run `make docker/psql` |
+| Postgres           | `localhost:5433`, or just run `make docker/psql` |
 
 All ports are bound to `127.0.0.1`, so nothing is reachable from the rest of your network. If a port is already taken (for example by a Postgres installed on the host), change `POSTGRES_HOST_PORT`, `API_PORT`, or `MAILPIT_UI_PORT` in `.env`.
 
