@@ -163,16 +163,16 @@ func getModulePathAndName() (string, string, error) {
 }
 
 // LoadConfig loads the configuration, returning the resulting Config struct.
-// In development mode, it loads from .env file and detects Go module
+// In development mode, it loads .env.local (if present) and detects Go module
 // information.
 //
-// In production, it skips .env loading and module detection.
+// In production, it skips .env.local loading and module detection.
 //
 // Configuration is loaded in the following order:
 //
 //  1. Default values
 //
-//  2. Environment variables (including .env file in development)
+//  2. Environment variables (including .env.local in development)
 //
 //  3. Command line flags (these take highest precedence)
 //
@@ -218,14 +218,10 @@ func LoadConfig() Config {
 	// Parse flags once
 	flag.Parse()
 
-	// Load appropriate .env file
-	envFile := ".env.local"
-	if cfg.Env == "production" {
-		envFile = ".env.production"
-	}
-
-	// Only load .env file and get module info in non-production environments
+	// Only load .env.local and get module info in non-production environments.
+	// Production gets its settings from flags and environment variables.
 	if cfg.Env != "production" {
+		envFile := ".env.local"
 		log.Printf("Loading .env file: %s", envFile)
 
 		if err := godotenv.Load(envFile); err != nil {
