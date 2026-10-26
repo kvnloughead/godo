@@ -138,23 +138,6 @@ db/setup: confirm
 # DATABASE MANAGEMENT
 # ============================================================
 
-## db/drop: drop database and user (destructive!)
-.PHONY: db/drop
-db/drop: confirm
-	@echo 'Dropping database and user...'
-	@sudo cp db/scripts/drop.sql /tmp/db_drop.sql
-	@echo "Setting permissions..."
-	@sudo chown postgres:postgres /tmp/db_drop.sql
-	@echo "Running drop script..."
-	@cd /tmp && sudo -u postgres psql \
-		-v db_name=$(DB_NAME) \
-		-v db_user=$(DB_USER) \
-		-v ON_ERROR_STOP=1 \
-		-f /tmp/db_drop.sql
-	@echo "Cleaning up..."
-	@sudo rm /tmp/db_drop.sql
-	@echo 'Database and user dropped.'
-
 ## db/psql: connect the the database using psql
 .PHONY: db/psql
 db/psql:
