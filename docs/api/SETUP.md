@@ -75,12 +75,9 @@ After changing Go code, `make docker/up` rebuilds the image. With `make docker/d
 
 Everything comes from `.env`, which Compose reads automatically. See `.env.example` for each setting. `.env` is gitignored. The API gets its settings as environment variables and flags in the `api` service of `compose.yaml`. Run `make help/web` to see all flags.
 
-### Known issue: email in development mode
+### Email
 
-When `API_ENV=development` (the default), the API builds the email sender address by running `go list -m`. The runtime image has no Go toolchain, so the sender ends up empty and sending fails with `gomail: invalid address " <no-reply@>"`. Registration still succeeds, but no email reaches Mailpit. Until this is fixed in `internal/injector/config.go`, do one of the following:
-
-- Use `make docker/dev`. The dev image includes Go, so the sender is built correctly.
-- Or set `API_ENV=production` in `.env`. The API then uses `SMTP_SENDER`. This also shortens authentication tokens from 28 to 14 days and makes the healthcheck report `production`.
+Registration and activation emails go to Mailpit at http://localhost:8025. The sender address comes from `SMTP_SENDER` in `.env`. If it's unset outside production, the API derives a sender from the Go module path, or uses `GoDo <no-reply@godo.localhost>` when the Go toolchain isn't available.
 
 ## Pre-commit Hook
 

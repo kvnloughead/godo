@@ -13,6 +13,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// devSMTPSender is the sender used outside production when neither
+// SMTP_SENDER nor the Go module path is available.
+const devSMTPSender = "GoDo <no-reply@godo.localhost>"
+
 // Config is a struct containing configuration settings. These settings are
 // specified as CLI flags when application starts, and have defaults provided
 // in case they are omitted.
@@ -235,17 +239,23 @@ func LoadConfig() Config {
 		}
 	}
 
-	// Set SMTP sender based on environment
-	if cfg.Env != "production" {
-		cfg.SMTP.Sender = fmt.Sprintf("%s <no-reply@%s>", moduleName, modulePath)
-	}
-
 	// Load settings that don't have defaults provided. Suitable values must be
 	// provided as either flags or environmental variables.
 	loadDefaultlessStringSetting(&cfg.DB.DSN, "DB_DSN")
 	loadDefaultlessStringSetting(&cfg.SMTP.Username, "SMTP_USERNAME")
 	loadDefaultlessStringSetting(&cfg.SMTP.Password, "SMTP_PASSWORD")
 	loadDefaultlessStringSetting(&cfg.SMTP.Sender, "SMTP_SENDER")
+
+	// Outside production, fall back to a sender derived from the Go module. If
+	// module detection failed (for example, in a container without the Go
+	// toolchain), use a fixed development sender instead.
+	if cfg.SMTP.Sender == "" && cfg.Env != "production" {
+		if modulePath != "" {
+			cfg.SMTP.Sender = fmt.Sprintf("%s <no-reply@%s>", moduleName, modulePath)
+		} else {
+			cfg.SMTP.Sender = devSMTPSender
+		}
+	}
 
 	// Load integer and duration valued configuration options.
 	loadIntFromEnvOrFlag(&cfg.Port, 4000, "PORT")
