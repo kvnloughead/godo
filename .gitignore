@@ -11,5 +11,8 @@ build/
 # godo binary for development
 /godo
 
+# git worktrees created by Claude Code agents
+.claude/worktrees/
+
 # example env file is committed
 !.env.example
