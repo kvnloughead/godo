@@ -430,17 +430,19 @@ func TestParseWithProjectsTagsAndContexts(t *testing.T) {
 
 /* -------------------------- String and Line tests ------------------------- */
 
-type stringAndLineTests []struct {
-	description string
-	todo        Todo
-	expected    string
+type stringAndLineTestCase struct {
+	description    string
+	todo           Todo
+	expectedLine   string
+	expectedString string
 }
 
-func TestLine(t *testing.T) {
-	tests := stringAndLineTests{
+func prepareLineAndStringTestCases() []stringAndLineTestCase {
+	tests := []stringAndLineTestCase{
 		{
-			description: "Basic Line test",
+			description: "Without mod: or id:, Line and String are the same",
 			todo: Todo{
+				Completed:   true,
 				Priority:    "M",
 				Description: "do something +foo +bar @con1 @con2 due:tuesday foo:bar",
 				CompletedAt: expectedCompletedAt,
@@ -449,10 +451,28 @@ func TestLine(t *testing.T) {
 				Contexts:    []string{"con1", "con2"},
 				Tags:        map[string]string{"due": "tuesday", "foo": "bar"},
 			},
-			expected: fmt.Sprintf("(M) %s %s do something +foo +bar @con1 @con2 due:tuesday foo:bar", completedAtString, createdAtString),
+			expectedLine:   fmt.Sprintf("x (M) %s %s do something +foo +bar @con1 @con2 due:tuesday foo:bar", completedAtString, createdAtString),
+			expectedString: fmt.Sprintf("x (M) %s %s do something +foo +bar @con1 @con2 due:tuesday foo:bar", completedAtString, createdAtString),
 		},
 		{
-			description: "mod: and id: should be omitted",
+			description: "mod: and id: should be omitted from Line but included in String",
+			todo: Todo{
+				Completed:   true,
+				ID:          "01M5WB5V23APQXY9CZQ49HNABG",
+				Mod:         expectedMod,
+				Priority:    "M",
+				Description: "do something +foo +bar @con1 @con2 due:tuesday foo:bar",
+				CompletedAt: expectedCompletedAt,
+				CreatedAt:   expectedCreatedAt,
+				Projects:    []string{"foo", "bar"},
+				Contexts:    []string{"con1", "con2"},
+				Tags:        map[string]string{"due": "tuesday", "foo": "bar"},
+			},
+			expectedLine:   fmt.Sprintf("x (M) %s %s do something +foo +bar @con1 @con2 due:tuesday foo:bar", completedAtString, createdAtString),
+			expectedString: fmt.Sprintf("x (M) %s %s do something +foo +bar @con1 @con2 due:tuesday foo:bar id:01M5WB5V23APQXY9CZQ49HNABG mod:%s", completedAtString, createdAtString, RFC3339String),
+		},
+		{
+			description: "completed and created dates should be ignored if the todo is not completed",
 			todo: Todo{
 				ID:          "01M5WB5V23APQXY9CZQ49HNABG",
 				Mod:         expectedMod,
@@ -464,61 +484,35 @@ func TestLine(t *testing.T) {
 				Contexts:    []string{"con1", "con2"},
 				Tags:        map[string]string{"due": "tuesday", "foo": "bar"},
 			},
-			expected: fmt.Sprintf("(M) %s %s do something +foo +bar @con1 @con2 due:tuesday foo:bar", completedAtString, createdAtString),
+			expectedLine:   "(M) do something +foo +bar @con1 @con2 due:tuesday foo:bar",
+			expectedString: fmt.Sprintf("(M) do something +foo +bar @con1 @con2 due:tuesday foo:bar id:01M5WB5V23APQXY9CZQ49HNABG mod:%s", RFC3339String),
+		},
+		{
+			description: "mod: and id: should be omitted from String if they are empty or zero-valued",
+			todo: Todo{
+				Priority:    "M",
+				Description: "do something +foo +bar @con1 @con2 due:tuesday foo:bar",
+				Projects:    []string{"foo", "bar"},
+				Contexts:    []string{"con1", "con2"},
+				Tags:        map[string]string{"due": "tuesday", "foo": "bar"},
+			},
+			expectedLine:   "(M) do something +foo +bar @con1 @con2 due:tuesday foo:bar",
+			expectedString: "(M) do something +foo +bar @con1 @con2 due:tuesday foo:bar",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.description, func(t *testing.T) {
-			actual := tt.todo.Line()
-			assert.Equal(t, tt.expected, actual)
-
-			tt.todo.Completed = true
-			actual = tt.todo.Line()
-			assert.Equal(t, fmt.Sprintf("x %s", tt.expected), actual)
-		})
-	}
+	return tests
 }
 
-func TestString(t *testing.T) {
-	tests := stringAndLineTests{
-		{
-			description: "Basic String test",
-			todo: Todo{
-				ID:          "01M5WB5V23APQXY9CZQ49HNABG",
-				Mod:         expectedMod,
-				Priority:    "M",
-				Description: "do something +foo +bar @con1 @con2 due:tuesday foo:bar",
-				CompletedAt: expectedCompletedAt,
-				CreatedAt:   expectedCreatedAt,
-				Projects:    []string{"foo", "bar"},
-				Contexts:    []string{"con1", "con2"},
-				Tags:        map[string]string{"due": "tuesday", "foo": "bar"},
-			},
-			expected: fmt.Sprintf("(M) %s %s do something +foo +bar @con1 @con2 due:tuesday foo:bar id:01M5WB5V23APQXY9CZQ49HNABG mod:%s", completedAtString, createdAtString, RFC3339String),
-		},
-		{
-			description: "mod: and id: should be omitted if they are empty or zero-valued",
-			todo: Todo{
-				Priority:    "M",
-				Description: "do something +foo +bar @con1 @con2 due:tuesday foo:bar",
-				CompletedAt: expectedCompletedAt,
-				CreatedAt:   expectedCreatedAt,
-				Projects:    []string{"foo", "bar"},
-				Contexts:    []string{"con1", "con2"},
-				Tags:        map[string]string{"due": "tuesday", "foo": "bar"},
-			},
-			expected: fmt.Sprintf("(M) %s %s do something +foo +bar @con1 @con2 due:tuesday foo:bar", completedAtString, createdAtString),
-		},
-	}
+func TestStringAndLine(t *testing.T) {
+	tests := prepareLineAndStringTestCases()
+
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
+			actualLine := tt.todo.Line()
+			assert.Equal(t, tt.expectedLine, actualLine)
 
-			actual := tt.todo.String()
-			assert.Equal(t, tt.expected, actual)
-
-			tt.todo.Completed = true
-			actual = tt.todo.String()
-			assert.Equal(t, "x "+tt.expected, actual)
+			actualString := tt.todo.String()
+			assert.Equal(t, tt.expectedString, actualString)
 		})
 	}
 }
