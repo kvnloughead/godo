@@ -9,16 +9,19 @@ import (
 )
 
 var (
-	priorityRegex = regexp.MustCompile(`\([A-Z]\)`)
-	projectRegex  = regexp.MustCompile(`\+\S+`)
-	contextRegex  = regexp.MustCompile(`@\S+`)
-	tagRegex      = regexp.MustCompile(`[a-zA-Z1-9]:\S+`)
+	priorityRegex = regexp.MustCompile(`^\([A-Z]\)$`)
+	projectRegex  = regexp.MustCompile(`^\+\S+$`)
+	contextRegex  = regexp.MustCompile(`^@\S+$`)
+	tagRegex      = regexp.MustCompile(`^[a-zA-Z0-9_]+:[a-zA-Z0-9_]+$`)
+
+	idRegex = regexp.MustCompile(`^[0-9A-Za-z-]{1,64}$`)
 
 	todoTxtDateLayout = "2006-01-02"
 )
 
-// Parse parses a single todo.txt line, including GoDo's id: and mod: tags. The
-// format is described here :https://github.com/todotxt/todo.txt#todotxt-format-rules)
+// Parse parses a single todo.txt line, including GoDo's id: and mod: tags. A
+// summary of the format can be found in docs/TODOTXT.md. For more details, see
+// here: https://github.com/todotxt/todo.txt#todotxt-format-rules.
 //
 // Parse never sets Archived or Version, since neither is encoded in the line.
 // It returns an error if the description is empty. Projects, contexts, and
@@ -77,7 +80,10 @@ func Parse(line string) (Todo, error) {
 		} else if tagRegex.MatchString(word) {
 			err := ParseTag(word, &todo, tags)
 			if err != nil {
-				return Todo{}, fmt.Errorf("mod value must be a valid RFC3339 string; got %s", strings.Split(word, ":")[1])
+				var parseErr *time.ParseError
+				if errors.As(err, &parseErr) {
+					return Todo{}, fmt.Errorf("mod value must be a valid RFC3339 string; got %s", strings.Split(word, ":")[1])
+				}
 			}
 		}
 	}
@@ -91,10 +97,18 @@ func Parse(line string) (Todo, error) {
 	return todo, nil
 }
 
-// ParseTag parses a todo.txt key:value flag. If the key is mod or id, it gets
-// routed to Todo.Mod or Todo.ID. Otherwise the pair is added to the provided
-// tags map. It returns an error if mod key is found whose value isn't a valid
-// RFC3339 time.
+// ParseTag validates and parses a todo.txt key:value flag. If the key is mod
+// or id, it gets routed to Todo.Mod or Todo.ID. Otherwise the pair is added to
+// the provided tags map. Errors are returned if any of the following
+// validations fail:
+//
+// - mod: values must be valid RFC3339 times.
+//
+// - id: values are loosely validated to contain 1 to 64 alphanumerics and
+// hyphens (i.e, the character set of a UUID).
+//
+// - User supplied keys and values may only contain alphanumerics and
+// underscores.
 func ParseTag(tag string, todo *Todo, tags map[string]string) error {
 	split := strings.SplitN(tag, ":", 2)
 	key := split[0]
@@ -108,9 +122,15 @@ func ParseTag(tag string, todo *Todo, tags map[string]string) error {
 		}
 		todo.Mod = t
 	case "id":
-		todo.ID = split[1]
+		if !idRegex.MatchString(val) {
+			return fmt.Errorf("ID must consist of 1 to 64 alphanumerics or hyphens; got %s", val)
+		}
+		todo.ID = val
 	default:
-		tags[key] = split[1]
+		if !tagRegex.MatchString(tag) {
+			return errors.New("Keys and values can only contain alphanumerics or underscores.")
+		}
+		tags[key] = val
 	}
 	return nil
 }

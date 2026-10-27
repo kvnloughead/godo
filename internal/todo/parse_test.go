@@ -60,31 +60,6 @@ func TestParse(t *testing.T) {
 		testParseWithDates(t)
 	}
 
-	// Test errors
-	errorTests := []struct {
-		description string
-		line        string
-	}{
-		{
-			description: "Returns an error on empty string",
-			line:        "",
-		},
-		{
-			description: "Returns an error on with no plain todo text",
-			line:        "x (A) +foo @bar",
-		},
-	}
-
-	for _, tt := range errorTests {
-		t.Run(tt.description, func(t *testing.T) {
-			_, err := Parse(tt.line)
-			if err == nil {
-				t.Fatalf("Expected an error, got %v", err)
-			}
-
-		})
-	}
-
 	testParseWithDates(t)
 	testParseWithProjectsTagsAndContexts(t)
 	testParseWithEmptyDescription(t)
@@ -203,18 +178,33 @@ func TestParseTag(t *testing.T) {
 			},
 		},
 		{
-			description: "id:",
-			tag:         "id:" + "id-string",
+			description: "Valid id:",
+			tag:         "id:" + "B8CF9dCB-25CA-4E1A-98FB-9F32Fb6F17",
 			assertions: func(tag string, todo *Todo, tags map[string]string, err error) {
-				assert.Equal(t, "id-string", todo.ID)
+				assert.Equal(t, "B8CF9dCB-25CA-4E1A-98FB-9F32Fb6F17", todo.ID)
 			},
 		},
-
+		{
+			description: "id: with invalid ID returns an error",
+			tag:         "id:" + "//foo.bar",
+			assertions: func(tag string, todo *Todo, tags map[string]string, err error) {
+				if err == nil {
+					t.Fatal("Expected error, got nil.")
+				}
+			},
+		},
 		{
 			description: "key:val",
 			tag:         "key:val",
 			assertions: func(tag string, todo *Todo, tags map[string]string, err error) {
 				assert.Equal(t, map[string]string{"key": "val"}, tags)
+			},
+		},
+		{
+			description: "Alphanumerics and underscores are accepted for keys and values",
+			tag:         "azAz09_:_azAz09",
+			assertions: func(tag string, todo *Todo, tags map[string]string, err error) {
+				assert.Equal(t, map[string]string{"azAz09_": "_azAz09"}, tags)
 			},
 		},
 	}
@@ -265,6 +255,16 @@ func testParseWithProjectsTagsAndContexts(t *testing.T) {
 				Projects:    []string{"foo", "bar"},
 				Contexts:    []string{"con1", "con2"},
 				Tags:        map[string]string{"due": "tuesday"},
+			},
+		},
+		{
+			description: "Projects and contexts accept any non-whitespace characters",
+			line:        "(A) todo text +https://github.com/todotxt/todo.txt#rule-3-contexts-and-projects-may-appear-anywhere-in-the-line-after-priorityprepended-date @https://github.com/todotxt/todo.txt#rule-3-contexts-and-projects-may-appear-anywhere-in-the-line-after-priorityprepended-date",
+			expected: Todo{
+				Description: "todo text +https://github.com/todotxt/todo.txt#rule-3-contexts-and-projects-may-appear-anywhere-in-the-line-after-priorityprepended-date @https://github.com/todotxt/todo.txt#rule-3-contexts-and-projects-may-appear-anywhere-in-the-line-after-priorityprepended-date",
+				Priority:    "A",
+				Projects:    []string{"https://github.com/todotxt/todo.txt#rule-3-contexts-and-projects-may-appear-anywhere-in-the-line-after-priorityprepended-date"},
+				Contexts:    []string{"https://github.com/todotxt/todo.txt#rule-3-contexts-and-projects-may-appear-anywhere-in-the-line-after-priorityprepended-date"},
 			},
 		},
 	}
