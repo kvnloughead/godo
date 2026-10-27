@@ -52,9 +52,9 @@ func Parse(line string) (Todo, error) {
 		words = words[1:]
 	}
 
-	if t1, ok := ParseDate(first(), todoTxtDateLayout); ok {
+	if t1, err := time.Parse(todoTxtDateLayout, first()); err == nil {
 		words = words[1:]
-		if t2, ok := ParseDate(first(), todoTxtDateLayout); ok {
+		if t2, err := time.Parse(todoTxtDateLayout, first()); err == nil {
 			if t1.Before(t2) {
 				return Todo{}, errors.New("Creation date must come before completion date.")
 			}
