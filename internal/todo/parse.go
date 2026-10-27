@@ -85,6 +85,7 @@ func Parse(line string) (Todo, error) {
 		if !todo.Completed {
 			todo.CreatedAt = t1
 		} else {
+			todo.CompletedAt = t1
 			if t2, err := time.Parse(todoTxtDateLayout, first()); err == nil {
 				if t1.Before(t2) {
 					return Todo{}, errors.New("Creation date must come before completion date.")

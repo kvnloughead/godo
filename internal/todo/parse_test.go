@@ -178,7 +178,17 @@ func TestParseWithDates(t *testing.T) {
 			},
 		},
 		{
-			description: "Completed with CreatedAt",
+			description: "Completed with one date",
+			line:        "x (A) 2026-02-02 todo text",
+			expected: Todo{
+				Completed:   true,
+				Description: "todo text",
+				Priority:    "A",
+				CompletedAt: expectedCompletedAt,
+			},
+		},
+		{
+			description: "Completed with two dates",
 			line:        "x (A) 2026-02-02 2026-01-02 todo text",
 			expected: Todo{
 				Completed:   true,
