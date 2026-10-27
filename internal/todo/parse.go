@@ -114,10 +114,7 @@ func Parse(line string) (Todo, error) {
 		} else if tagRegex.MatchString(word) {
 			err := ParseTag(word, &todo, tags)
 			if err != nil {
-				var parseErr *time.ParseError
-				if errors.As(err, &parseErr) {
-					return Todo{}, fmt.Errorf("mod value must be a valid RFC3339 string; got %s", strings.Split(word, ":")[1])
-				}
+				return Todo{}, err
 			}
 		}
 	}
