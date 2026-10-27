@@ -44,6 +44,32 @@ func Parse(line string) (Todo, error) {
 		return words[0]
 	}
 
+	// last returns the last word in words or "" if words is empty
+	last := func() string {
+		if len(words) == 0 {
+			return ""
+		}
+		return words[len(words)-1]
+	}
+
+	// Extract and validate mod: and id: tags from the end of the string. Errors
+	// are returned if a tag is invalid or if more than one of each tag is found.
+	prefix, err := ExtractModAndID(last(), &todo)
+	if err != nil {
+		return Todo{}, err
+	}
+	if prefix != "" {
+		words = words[:len(words)-1]
+		nextPrefix, err := ExtractModAndID(last(), &todo)
+		if err != nil {
+			return Todo{}, err
+		}
+		if prefix == nextPrefix {
+			return Todo{}, fmt.Errorf("Multiple %s tags are not allowed", prefix)
+		}
+		words = words[:len(words)-1]
+	}
+
 	if first() == "x" {
 		todo.Completed = true
 		words = words[1:]
@@ -76,6 +102,10 @@ func Parse(line string) (Todo, error) {
 
 	tags := map[string]string{}
 	for _, word := range words {
+		prefix, _, _ := strings.Cut(word, ":")
+		if prefix == "mod" || prefix == "id" {
+			return Todo{}, errors.New("mod: and id: tags are reserved for internal use and must appear at the end of the line.")
+		}
 		if projectRegex.MatchString(word) {
 			todo.Projects = append(todo.Projects, word[1:])
 		} else if contextRegex.MatchString(word) {
@@ -98,6 +128,21 @@ func Parse(line string) (Todo, error) {
 	todo.Description = strings.Join(words, " ")
 
 	return todo, nil
+}
+
+// ExtractModAndID checks if the given word starts with mod: or id:. If so,
+// it parses it with ParseTag. Otherwise it does nothing. It returns the prefix
+// ("mod" or "id") and and any errors from ParseTag.
+func ExtractModAndID(word string, todo *Todo) (string, error) {
+	prefix, _, _ := strings.Cut(word, ":")
+	if prefix == "mod" || prefix == "id" {
+		err := ParseTag(word, todo, map[string]string{})
+		if err != nil {
+			return "", err
+		}
+		return prefix, nil
+	}
+	return "", nil
 }
 
 // ParseTag validates and parses a todo.txt key:value flag. If the key is mod
