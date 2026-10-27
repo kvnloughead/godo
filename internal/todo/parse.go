@@ -203,11 +203,15 @@ func (t Todo) Line() string {
 	return result
 }
 
-// String formats t as a full todo.txt line plus including id: and mod:. This
-// is the form written to todo.txt and done.txt.
+// String formats t as a full todo.txt line plus including id: and mod: if they
+// are not zero-valued. This is the form written to todo.txt and done.txt.
 func (t Todo) String() string {
 	result := t.Line()
-	result += " mod:" + t.Mod.Format(time.RFC3339)
-	result += " id:" + t.ID
+	if t.ID != "" {
+		result += " id:" + t.ID
+	}
+	if !t.Mod.IsZero() {
+		result += " mod:" + t.Mod.UTC().Format(time.RFC3339)
+	}
 	return result
 }
