@@ -175,6 +175,61 @@ func testParseWithDates(t *testing.T) {
 	}
 }
 
+func TestParseTag(t *testing.T) {
+	_, _, expectedMod, err := computeExpectedDates()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	tests := []struct {
+		description string
+		tag         string
+		assertions  func(tag string, todo *Todo, tags map[string]string, err error)
+	}{
+		{
+			description: "Valid mod:",
+			tag:         "mod:" + RFC3339String,
+			assertions: func(tag string, todo *Todo, tags map[string]string, err error) {
+				assert.Equal(t, expectedMod, todo.Mod)
+			},
+		},
+		{
+			description: "Invalid mod:",
+			tag:         "mod:" + "2026-01-02",
+			assertions: func(tag string, todo *Todo, tags map[string]string, err error) {
+				if err == nil {
+					t.Fatal("Expected error, got nil.")
+				}
+			},
+		},
+		{
+			description: "id:",
+			tag:         "id:" + "id-string",
+			assertions: func(tag string, todo *Todo, tags map[string]string, err error) {
+				assert.Equal(t, "id-string", todo.ID)
+			},
+		},
+
+		{
+			description: "key:val",
+			tag:         "key:val",
+			assertions: func(tag string, todo *Todo, tags map[string]string, err error) {
+				assert.Equal(t, map[string]string{"key": "val"}, tags)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		todo := Todo{}
+		tags := map[string]string{}
+		t.Run(tt.description, func(t *testing.T) {
+			err := ParseTag(tt.tag, &todo, tags)
+			tt.assertions(tt.tag, &todo, tags, err)
+		})
+	}
+
+}
+
 func testParseWithProjectsTagsAndContexts(t *testing.T) {
 	happyTests := []struct {
 		description string
@@ -185,7 +240,7 @@ func testParseWithProjectsTagsAndContexts(t *testing.T) {
 			description: "With trailing projects and contexts",
 			line:        "(A) todo text +foo +bar @con1 @con2",
 			expected: Todo{
-				Description: "todo text",
+				Description: "todo text +foo +bar @con1 @con2",
 				Priority:    "A",
 				Projects:    []string{"foo", "bar"},
 				Contexts:    []string{"con1", "con2"},
@@ -195,7 +250,7 @@ func testParseWithProjectsTagsAndContexts(t *testing.T) {
 			description: "With projects and contexts mixed up",
 			line:        "(A) todo text +foo @con1 +bar @con2",
 			expected: Todo{
-				Description: "todo text",
+				Description: "todo text +foo @con1 +bar @con2",
 				Priority:    "A",
 				Projects:    []string{"foo", "bar"},
 				Contexts:    []string{"con1", "con2"},
@@ -205,7 +260,7 @@ func testParseWithProjectsTagsAndContexts(t *testing.T) {
 			description: "With projects contexts and tags",
 			line:        "(A) todo text +foo due:tuesday @con1 +bar @con2",
 			expected: Todo{
-				Description: "todo text",
+				Description: "todo text +foo due:tuesday @con1 +bar @con2",
 				Priority:    "A",
 				Projects:    []string{"foo", "bar"},
 				Contexts:    []string{"con1", "con2"},
@@ -274,46 +329,6 @@ func computeExpectedDates() (expectedCompletedAt, expectedCreatedAt, expectedMod
 	return expectedCompletedAt, expectedCreatedAt, expectedMod, nil
 }
 
-func TestTagString(t *testing.T) {
-	tests := []struct {
-		description string
-		todo        Todo
-		expected    string
-		repeat      int
-	}{
-		{
-			description: "No tags returns an empty string",
-			todo:        Todo{},
-			expected:    "",
-		},
-		{
-			description: "Single tag",
-			todo: Todo{
-				Tags: map[string]string{"foo": "bar"},
-			},
-			expected: " foo:bar",
-		},
-		{
-			description: "Lexicographic order is preserved",
-			todo: Todo{
-				Tags: map[string]string{"a": "a", "z": "z", "b": "b", "y": "y", "c": "c", "x": "x"},
-			},
-			expected: " a:a b:b c:c x:x y:y z:z",
-			repeat:   9,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.description, func(t *testing.T) {
-			reps := tt.repeat + 1
-			for range reps {
-				actual := tt.todo.TagString()
-				assert.Equal(t, tt.expected, actual)
-			}
-		})
-	}
-}
-
 type stringAndLineTests []struct {
 	description string
 	todo        Todo
@@ -331,7 +346,7 @@ func prepareStringAndLineTests(expectedCompletedAt, expectedCreatedAt, expectedM
 				ID:          "01M5WB5V23APQXY9CZQ49HNABG",
 				Mod:         expectedMod,
 				Priority:    "M",
-				Description: "do something",
+				Description: "do something +foo +bar @con1 @con2 due:tuesday foo:bar",
 				CompletedAt: expectedCompletedAt,
 				CreatedAt:   expectedCreatedAt,
 				Projects:    []string{"foo", "bar"},

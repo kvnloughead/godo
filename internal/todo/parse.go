@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 )
@@ -69,7 +68,6 @@ func Parse(line string) (Todo, error) {
 		return Todo{}, errors.New("Description must not be empty.")
 	}
 
-	plainWords := []string{}
 	tags := map[string]string{}
 	for _, word := range words {
 		if projectRegex.MatchString(word) {
@@ -77,10 +75,10 @@ func Parse(line string) (Todo, error) {
 		} else if contextRegex.MatchString(word) {
 			todo.Contexts = append(todo.Contexts, word[1:])
 		} else if tagRegex.MatchString(word) {
-			split := strings.Split(word, ":")
-			tags[split[0]] = split[1]
-		} else {
-			plainWords = append(plainWords, word)
+			err := ParseTag(word, &todo, tags)
+			if err != nil {
+				return Todo{}, fmt.Errorf("mod value must be a valid RFC3339 string; got %s", strings.Split(word, ":")[1])
+			}
 		}
 	}
 
@@ -88,35 +86,33 @@ func Parse(line string) (Todo, error) {
 		todo.Tags = tags
 	}
 
-	if len(plainWords) == 0 {
-		return Todo{}, errors.New("Todo text must not be empty.")
-	}
-
-	todo.Description = strings.Join(plainWords, " ")
+	todo.Description = strings.Join(words, " ")
 
 	return todo, nil
 }
 
-// Returns the string representation of a todo's tags, with one
-// leading whitespace.
-func (t Todo) TagString() string {
-	nTags := len(t.Tags)
-	if len(t.Tags) == 0 {
-		return ""
-	}
+// ParseTag parses a todo.txt key:value flag. If the key is mod or id, it gets
+// routed to Todo.Mod or Todo.ID. Otherwise the pair is added to the provided
+// tags map. It returns an error if mod key is found whose value isn't a valid
+// RFC3339 time.
+func ParseTag(tag string, todo *Todo, tags map[string]string) error {
+	split := strings.SplitN(tag, ":", 2)
+	key := split[0]
+	val := split[1]
 
-	keys := make([]string, 0, nTags)
-	for k := range t.Tags {
-		keys = append(keys, k)
+	switch key {
+	case "mod":
+		t, err := time.Parse(time.RFC3339, val)
+		if err != nil {
+			return err
+		}
+		todo.Mod = t
+	case "id":
+		todo.ID = split[1]
+	default:
+		tags[key] = split[1]
 	}
-	sort.Strings(keys)
-
-	result := ""
-	for _, k := range keys {
-		result = result + fmt.Sprintf(" %s:%s", k, t.Tags[k])
-	}
-
-	return result
+	return nil
 }
 
 // Line formats t as a todo.txt line without the id: and mod: tags. This is the
@@ -138,15 +134,6 @@ func (t Todo) Line() string {
 	}
 
 	result := prefix + t.Description
-
-	for _, p := range t.Projects {
-		result = result + " +" + p
-	}
-	for _, c := range t.Contexts {
-		result = result + " @" + c
-	}
-	result += t.TagString()
-
 	return result
 }
 
