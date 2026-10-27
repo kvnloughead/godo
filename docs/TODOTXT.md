@@ -17,7 +17,10 @@ x (A) 2026-02-01 2026-01-01
 1. Each space-separated "word" in the prefix is optional, with a partial exception involving the dates.
 2. If an `x` is present as the first character, the task has been completed.
 3. `(A)` represents a priority. It must appear immediately after the completion-status. `A` through `Z` are allowed, with `A` having the highest priority.
-4. After the optional completion and priority fields, zero to two dates of YYYY-MM-DD format are allowed. If there is only one, it is the completion date. If there are two, the second is the creation date.
+4. After the optional completion and priority fields, zero to two dates of YYYY-MM-DD format are allowed. There are three cases:
+   - If a completed todo has any such dates, the first one is its completion date.
+   - If a completed todo has two such dates, the second one is its creation date. However, the creation date must be earlier than the completion date.
+   - If an uncompleted todo has any such dates, the first one is its creation date. Additional dates remain in the todo's text but are not parsed.
 
 ## The body
 

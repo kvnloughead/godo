@@ -56,17 +56,20 @@ func Parse(line string) (Todo, error) {
 
 	if t1, err := time.Parse(todoTxtDateLayout, first()); err == nil {
 		words = words[1:]
-		if t2, err := time.Parse(todoTxtDateLayout, first()); err == nil {
-			if t1.Before(t2) {
-				return Todo{}, errors.New("Creation date must come before completion date.")
-			}
-			todo.CompletedAt = t1
-			todo.CreatedAt = t2
-			words = words[1:]
-		} else {
+		if !todo.Completed {
 			todo.CreatedAt = t1
+		} else {
+			if t2, err := time.Parse(todoTxtDateLayout, first()); err == nil {
+				if t1.Before(t2) {
+					return Todo{}, errors.New("Creation date must come before completion date.")
+				}
+				todo.CompletedAt = t1
+				todo.CreatedAt = t2
+				words = words[1:]
+			}
 		}
 	}
+
 	if len(words) == 0 {
 		return Todo{}, errors.New("Description must not be empty.")
 	}

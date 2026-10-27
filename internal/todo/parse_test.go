@@ -56,11 +56,8 @@ func TestParse(t *testing.T) {
 			}
 			assert.Equal(t, tt.expected, todo)
 		})
-
-		testParseWithDates(t)
 	}
 
-	testParseWithDates(t)
 	testParseWithProjectsTagsAndContexts(t)
 	testParseWithEmptyDescription(t)
 }
@@ -76,7 +73,7 @@ func testParseWithEmptyDescription(t *testing.T) {
 	}
 }
 
-func testParseWithDates(t *testing.T) {
+func TestParseWithDates(t *testing.T) {
 	expectedCompletedAt, expectedCreatedAt, _, err := computeExpectedDates()
 	if err != nil {
 		t.Fatalf(err.Error())
@@ -88,17 +85,27 @@ func testParseWithDates(t *testing.T) {
 		expected    Todo
 	}{
 		{
-			description: "With CreatedAt",
-			line:        "x (A) 2026-01-02 todo text",
+			description: "Uncompleted with CreatedAt",
+			line:        "(A) 2026-01-02 todo text",
 			expected: Todo{
-				Completed:   true,
+				Completed:   false,
 				Description: "todo text",
 				Priority:    "A",
 				CreatedAt:   expectedCreatedAt,
 			},
 		},
 		{
-			description: "With CreatedAt and CompletedAt",
+			description: "Uncompleted can only have a creation date, a second date is left in the description",
+			line:        "(A) 2026-01-02 2026-02-02 todo text",
+			expected: Todo{
+				Completed:   false,
+				Description: "2026-02-02 todo text",
+				Priority:    "A",
+				CreatedAt:   expectedCreatedAt,
+			},
+		},
+		{
+			description: "Completed with CreatedAt",
 			line:        "x (A) 2026-02-02 2026-01-02 todo text",
 			expected: Todo{
 				Completed:   true,
@@ -109,7 +116,18 @@ func testParseWithDates(t *testing.T) {
 			},
 		},
 		{
-			description: "Invalid format remains in the text",
+			description: "Completed may be the same as CreatedAt",
+			line:        "x (A) 2026-02-02 2026-02-02 todo text",
+			expected: Todo{
+				Completed:   true,
+				Description: "todo text",
+				Priority:    "A",
+				CreatedAt:   expectedCompletedAt,
+				CompletedAt: expectedCompletedAt,
+			},
+		},
+		{
+			description: "Invalid format is left in the description",
 			line:        "x (A) 02-02-2026  todo text",
 			expected: Todo{
 				Completed:   true,
@@ -276,25 +294,6 @@ func testParseWithProjectsTagsAndContexts(t *testing.T) {
 				t.Fatalf("Unexpected error, %v", err)
 			}
 			assert.Equal(t, tt.expected, todo)
-		})
-	}
-
-	errorTests := []struct {
-		description string
-		line        string
-	}{
-		{
-			description: "CreatedAt is before CompletedAt",
-			line:        "x (A) 2026-01-02 2026-02-02 todo text",
-		},
-	}
-
-	for _, tt := range errorTests {
-		t.Run(tt.description, func(t *testing.T) {
-			_, err := Parse(tt.line)
-			if err == nil {
-				t.Fatalf("Expected an error, got nil")
-			}
 		})
 	}
 }
