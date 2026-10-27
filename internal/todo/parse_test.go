@@ -142,7 +142,12 @@ func TestParseBasic(t *testing.T) {
 
 func TestParseWithEmptyDescription(t *testing.T) {
 	cases := []string{
-		"", " ", " x", "x (B)", "(B) 2025-02-01", "x 2025-02-01  2025-01-01", fmt.Sprintf("x 2025-02-01  2025-01-01 mod:%s id:123", RFC3339String),
+		"", " ", " x", "x (B)", "(B) 2025-02-01", "x 2025-02-01  2025-01-01",
+		fmt.Sprintf("x 2025-02-01  2025-01-01 mod:%s id:123", RFC3339String),
+		fmt.Sprintf("mod:%s id:123", RFC3339String),
+		"x (B) id:123",
+		"id:123",
+		"mod:" + RFC3339String,
 	}
 
 	for _, s := range cases {
@@ -373,6 +378,30 @@ func TestParseWithProjectsTagsAndContexts(t *testing.T) {
 				Contexts:    []string{"con1", "con2"},
 				Tags:        map[string]string{"due": "tuesday"},
 				Mod:         expectedMod,
+				ID:          "123",
+			},
+		},
+		{
+			description: "With a single internal tag the final word in the description should be preserved",
+			line:        "(A) todo text +foo due:tuesday @con1 +bar @con2 id:123",
+			expected: Todo{
+				Description: "todo text +foo due:tuesday @con1 +bar @con2",
+				Priority:    "A",
+				Projects:    []string{"foo", "bar"},
+				Contexts:    []string{"con1", "con2"},
+				Tags:        map[string]string{"due": "tuesday"},
+				ID:          "123",
+			},
+		},
+		{
+			description: "With a single internal tag the final word in the description should be preserved",
+			line:        "(A) todo text +foo due:tuesday @con1 +bar @con2 id:123",
+			expected: Todo{
+				Description: "todo text +foo due:tuesday @con1 +bar @con2",
+				Priority:    "A",
+				Projects:    []string{"foo", "bar"},
+				Contexts:    []string{"con1", "con2"},
+				Tags:        map[string]string{"due": "tuesday"},
 				ID:          "123",
 			},
 		},

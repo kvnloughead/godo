@@ -67,7 +67,9 @@ func Parse(line string) (Todo, error) {
 		if prefix == nextPrefix {
 			return Todo{}, fmt.Errorf("Multiple %s tags are not allowed", prefix)
 		}
-		words = words[:len(words)-1]
+		if nextPrefix != "" {
+			words = words[:len(words)-1]
+		}
 	}
 
 	if first() == "x" {
