@@ -192,10 +192,10 @@ func (t Todo) Line() string {
 	if t.Priority != "" {
 		prefix += fmt.Sprintf("(%s) ", t.Priority)
 	}
-	if !t.CompletedAt.IsZero() {
+	if !t.CompletedAt.IsZero() && t.Completed {
 		prefix += t.CompletedAt.Format(todoTxtDateLayout) + " "
 	}
-	if !t.CreatedAt.IsZero() {
+	if !t.CreatedAt.IsZero() && t.Completed {
 		prefix += t.CreatedAt.Format(todoTxtDateLayout) + " "
 	}
 
