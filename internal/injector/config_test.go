@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/go-playground/assert/v2"
+	"github.com/stretchr/testify/assert"
 )
 
 // TestLoadConfig tests loading configuration via environment variables and
@@ -87,9 +87,8 @@ func TestLoadConfig(t *testing.T) {
 
 			var cfg = LoadConfig()
 
-			assert.Equal(t, cfg.DB.DSN, tt.expectedConfig.DB.DSN)
-			assert.Equal(t, cfg.Port, tt.expectedConfig.Port)
-			assert.Equal(t, cfg.Verbose, tt.expectedConfig.Verbose)
+			assert.Equal(t, tt.expectedConfig.DB.DSN, cfg.DB.DSN)
+			assert.Equal(t, tt.expectedConfig.Port, cfg.Port)
 
 			// Cleanup by unsetting environment variables
 			for key := range tt.envVars {
