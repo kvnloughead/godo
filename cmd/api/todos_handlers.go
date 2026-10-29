@@ -178,10 +178,20 @@ func (app *APIApplication) getTodo(w http.ResponseWriter, r *http.Request) {
 // they will be unchanged.
 //
 // Only todo items with matching ID and userID can be updated.
+//
+// If the request has an If-Match header, its value must match the todo's
+// current version, or a 409 Conflict response is sent. Without the header, the
+// update is applied to whatever version is current.
 func (app *APIApplication) updateTodo(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIdParam(r)
 	if err != nil {
 		app.notFoundResponse(w, r)
+		return
+	}
+
+	ifMatch, hasIfMatch, err := app.readIfMatch(r)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
@@ -195,6 +205,14 @@ func (app *APIApplication) updateTodo(w http.ResponseWriter, r *http.Request) {
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
+		return
+	}
+
+	// The client last saw a different version, so someone else has changed the
+	// todo since. Todos.Update also checks the version, which catches changes
+	// made between GetTodoIfOwned and Update.
+	if hasIfMatch && ifMatch != todo.Version {
+		app.editConflictResponse(w, r)
 		return
 	}
 
@@ -266,10 +284,15 @@ func (app *APIApplication) updateTodo(w http.ResponseWriter, r *http.Request) {
 }
 
 // deleteTodo handles requests to DELETE /v1/todos/:id. If it finds a
-// document with the supplied ID it removes it from the database and sends a
-// JSON response: { "message": "todo successfully deleted" }
+// document with the supplied ID, owned by the current user, it soft-deletes it
+// (see TodoModel.Delete) and sends a JSON response:
+// { "message": "todo successfully deleted" }
 //
-// If the document is not found, a 404 response is sent.
+// If the document is not found, or has already been deleted, a 404 response
+// is sent.
+//
+// If the request has an If-Match header, its value must match the todo's
+// current version, or a 409 Conflict response is sent.
 func (app *APIApplication) deleteTodo(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIdParam(r)
 	if err != nil {
@@ -277,12 +300,36 @@ func (app *APIApplication) deleteTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Delete record or send an error response.
-	err = app.Models.Todos.Delete(id)
+	ifMatch, hasIfMatch, err := app.readIfMatch(r)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	userID := contextGet[*data.User](r, userContextKey).ID
+
+	todo, err := app.Models.Todos.GetTodoIfOwned(id, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
 			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	if hasIfMatch && ifMatch != todo.Version {
+		app.editConflictResponse(w, r)
+		return
+	}
+
+	// Delete record or send an error response.
+	err = app.Models.Todos.Delete(todo)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
 		default:
 			app.serverErrorResponse(w, r, err)
 		}

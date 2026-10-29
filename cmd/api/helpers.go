@@ -150,6 +150,27 @@ func (app *APIApplication) readIdParam(r *http.Request) (int64, error) {
 	return id, nil
 }
 
+// readIfMatch reads the optional If-Match header, which should contain the
+// version of the resource the client last saw. The version may be quoted, like
+// an ETag ("3"), or bare (3).
+//
+// If the header is absent or "*", ok is false and the caller should skip the
+// version check. If the header can't be parsed as a positive integer, an error
+// is returned.
+func (app *APIApplication) readIfMatch(r *http.Request) (version int32, ok bool, err error) {
+	s := strings.TrimSpace(r.Header.Get("If-Match"))
+	if s == "" || s == "*" {
+		return 0, false, nil
+	}
+
+	n, err := strconv.ParseInt(strings.Trim(s, `"`), 10, 32)
+	if err != nil || n < 1 {
+		return 0, false, errors.New("If-Match header must contain a positive integer version")
+	}
+
+	return int32(n), true, nil
+}
+
 // readQueryString returns the value of the key in the provided query string
 // map. If the value is an empty string, the default value is returned instead.
 func (app *APIApplication) readQueryString(qs url.Values, key string, defaultValue string) string {

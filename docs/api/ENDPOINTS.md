@@ -112,6 +112,33 @@ curl -X POST -d '{ "email": "user@mail.com", "password": "password" }' localhost
 
 ## Endpoints that require authentication
 
+### Todo fields
+
+Every todo in a response includes:
+
+- `id`: the integer ID used in `/v1/todos/:id` routes.
+- `uid`: a stable, unique string ID. New todos get a [ULID](https://github.com/ulid/spec). Todos created before `uid` existed have a random UUID instead. Treat it as an opaque string. Routes will switch from `id` to `uid` in a later release.
+- `version`: starts at 1 and goes up by one on every change. Send it in `If-Match` to detect conflicting edits (see below).
+- `created_at` and `updated_at`: when the todo was created and last changed.
+
+### Conflicts and If-Match
+
+`PATCH` and `DELETE` on `/v1/todos/:id` accept an optional `If-Match` header containing the `version` you last saw, either bare (`If-Match: 3`) or quoted like an ETag (`If-Match: "3"`).
+
+- If it matches the todo's current version, the request goes ahead.
+- If it doesn't, someone else has changed the todo since you read it. Nothing is changed, and the response is `409 Conflict`. Fetch the todo again and retry if appropriate.
+- If the header is missing or `*`, there's no version check, and the change applies to whatever version is current.
+- If the header isn't a positive integer, the response is `400 Bad Request`.
+
+A `409` can also happen without `If-Match`, if another request changes the same todo at the same moment.
+
+```json
+// Example 409 response
+{
+  "error": "unable to update the record due to an edit conflict, please try again"
+}
+```
+
 ### GET /v1/todos
 
 Returns an array containing the user's todo items, as well as some pagination data.
@@ -170,8 +197,10 @@ curl -X POST -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" -d '{ "text":
 {
   "todo": {
     "id": 1,
+    "uid": "01JB8Z3K4M7Q2W9XHT5RVC6N0D",
     "user_id": 1,
     "created_at": "2024-05-27T17:44:39-04:00",
+    "updated_at": "2024-05-27T17:44:39.512345-04:00",
     "text": "(A) do something important @readme +godo",
     "priority": 0,
     "completed": false,
@@ -206,11 +235,14 @@ curl -X POST -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" localhost:400
 
 Updates the todo with the provided ID, but only if it is owned by the current user.
 
-If there is no such todo a 404 response is sent.
+If there is no such todo, or it has been deleted, a 404 response is sent. If an `If-Match` header is sent and doesn't match the todo's version, a 409 response is sent (see [Conflicts and If-Match](#conflicts-and-if-match)).
 
 ```bash
 # Example usage
 curl -X PATCH -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" -d '{ "completed": true }' localhost:4000/v1/todos/1
+
+# Only apply the change if the todo is still at version 1
+curl -X PATCH -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" -H "If-Match: 1" -d '{ "completed": true }' localhost:4000/v1/todos/1
 ```
 
 ```json
@@ -229,9 +261,21 @@ curl -X PATCH -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" -d '{ "compl
 
 Deletes a todo by its ID, but only if it is owned by the current user.
 
-If there is no such todo a 404 response is sent.
+Deletes are soft: the server keeps a record that the todo was deleted, so the delete can reach your other devices when they sync. A deleted todo no longer appears in any response, and further requests for it return 404.
+
+If there is no such todo, or it has already been deleted, a 404 response is sent. If an `If-Match` header is sent and doesn't match the todo's version, a 409 response is sent (see [Conflicts and If-Match](#conflicts-and-if-match)).
 
 ```bash
 # Example usage
 curl -X DELETE -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" localhost:4000/v1/todos/1
+
+# Only delete the todo if it is still at version 2
+curl -X DELETE -H "Authorization: Bearer F6SB76ZCLKLJBHP7K7A6N2S7JM" -H "If-Match: 2" localhost:4000/v1/todos/1
+```
+
+```json
+// Example response
+{
+  "message": "todo successfuly deleted"
+}
 ```
