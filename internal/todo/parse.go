@@ -197,7 +197,7 @@ func (t Todo) Line() string {
 	if !t.CompletedAt.IsZero() && t.Completed {
 		prefix += t.CompletedAt.Format(todoTxtDateLayout) + " "
 	}
-	if !t.CreatedAt.IsZero() && t.Completed {
+	if !t.CreatedAt.IsZero() {
 		prefix += t.CreatedAt.Format(todoTxtDateLayout) + " "
 	}
 

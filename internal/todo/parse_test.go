@@ -501,9 +501,8 @@ func prepareLineAndStringTestCases() []stringAndLineTestCase {
 			expectedString: fmt.Sprintf("x (M) %s %s do something +foo +bar @con1 @con2 due:tuesday foo:bar id:01M5WB5V23APQXY9CZQ49HNABG mod:%s", completedAtString, createdAtString, RFC3339String),
 		},
 		{
-			description: "completed and created dates should be ignored if the todo is not completed",
+			description: "completed date should be ignored if the todo is not completed",
 			todo: Todo{
-				ID:          "01M5WB5V23APQXY9CZQ49HNABG",
 				Mod:         expectedMod,
 				Priority:    "M",
 				Description: "do something +foo +bar @con1 @con2 due:tuesday foo:bar",
@@ -513,8 +512,8 @@ func prepareLineAndStringTestCases() []stringAndLineTestCase {
 				Contexts:    []string{"con1", "con2"},
 				Tags:        map[string]string{"due": "tuesday", "foo": "bar"},
 			},
-			expectedLine:   "(M) do something +foo +bar @con1 @con2 due:tuesday foo:bar",
-			expectedString: fmt.Sprintf("(M) do something +foo +bar @con1 @con2 due:tuesday foo:bar id:01M5WB5V23APQXY9CZQ49HNABG mod:%s", RFC3339String),
+			expectedLine:   fmt.Sprintf("(M) %s do something +foo +bar @con1 @con2 due:tuesday foo:bar", createdAtString),
+			expectedString: fmt.Sprintf("(M) %s do something +foo +bar @con1 @con2 due:tuesday foo:bar mod:%s", createdAtString, RFC3339String),
 		},
 		{
 			description: "mod: and id: should be omitted from String if they are empty or zero-valued",
@@ -527,6 +526,19 @@ func prepareLineAndStringTestCases() []stringAndLineTestCase {
 			},
 			expectedLine:   "(M) do something +foo +bar @con1 @con2 due:tuesday foo:bar",
 			expectedString: "(M) do something +foo +bar @con1 @con2 due:tuesday foo:bar",
+		},
+		{
+			description: "Uncompleted todos include their CreatedAt date if it is non-empty",
+			todo: Todo{
+				Priority:    "M",
+				Description: "do something +foo +bar @con1 @con2 due:tuesday foo:bar",
+				Projects:    []string{"foo", "bar"},
+				Contexts:    []string{"con1", "con2"},
+				Tags:        map[string]string{"due": "tuesday", "foo": "bar"},
+				CreatedAt:   expectedCreatedAt,
+			},
+			expectedLine:   fmt.Sprintf("(M) %s do something +foo +bar @con1 @con2 due:tuesday foo:bar", createdAtString),
+			expectedString: fmt.Sprintf("(M) %s do something +foo +bar @con1 @con2 due:tuesday foo:bar", createdAtString),
 		},
 	}
 	return tests
