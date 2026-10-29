@@ -10,7 +10,7 @@ import (
 //	`<time>-<revision-number>[-dirty]`
 //
 // where <revision-number> is the current version control revision number,
-// <time> is the time the revision was made, and and [-dirty] is included if
+// <time> is the time the revision was made, and [-dirty] is included if
 // the code in the binary has modifications that aren't included in the
 // revision.
 //

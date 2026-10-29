@@ -92,7 +92,6 @@ func Parse(line string) (Todo, error) {
 				if t1.Before(t2) {
 					return Todo{}, errors.New("Creation date must come before completion date.")
 				}
-				todo.CompletedAt = t1
 				todo.CreatedAt = t2
 				words = words[1:]
 			}
@@ -132,7 +131,7 @@ func Parse(line string) (Todo, error) {
 
 // ExtractModAndID checks if the given word starts with mod: or id:. If so,
 // it parses it with ParseTag. Otherwise it does nothing. It returns the prefix
-// ("mod" or "id") and and any errors from ParseTag.
+// ("mod" or "id") and any errors from ParseTag.
 func ExtractModAndID(word string, todo *Todo) (string, error) {
 	prefix, _, _ := strings.Cut(word, ":")
 	if prefix == "mod" || prefix == "id" {
@@ -166,7 +165,7 @@ func ParseTag(tag string, todo *Todo, tags map[string]string) error {
 	case "mod":
 		t, err := time.Parse(time.RFC3339, val)
 		if err != nil {
-			return err
+			return fmt.Errorf("invalid mod: value %q: %w", val, err)
 		}
 		todo.Mod = t
 	case "id":
