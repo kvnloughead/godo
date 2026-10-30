@@ -2,12 +2,27 @@
 
 # Multi-stage build for the GoDo API (./cmd/api).
 #
-#   build    compiles a static binary
+#   web      builds the frontend (web/dist)
+#   build    compiles a static binary with the frontend embedded
 #   dev      Go toolchain + air, for live reload (used by compose.dev.yaml)
 #   runtime  small Alpine image that runs the binary (the default target)
 
+ARG NODE_IMAGE=node:24.22.1-alpine3.24
 ARG GO_IMAGE=golang:1.27.3-alpine3.24
 ARG RUNTIME_IMAGE=alpine:3.24.3
+
+# ------------------------------------------------------------
+# web
+# ------------------------------------------------------------
+FROM ${NODE_IMAGE} AS web
+WORKDIR /src/web
+
+# Install packages in their own layer so code changes don't reinstall them.
+COPY web/package.json web/package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci
+
+COPY web/ ./
+RUN npm run build
 
 # ------------------------------------------------------------
 # build
@@ -20,11 +35,13 @@ COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod go mod download
 
 COPY . .
+COPY --from=web /src/web/dist ./web/dist
 # -buildvcs=false: .git is not copied into the build context.
+# -tags embedweb: embed web/dist so the API serves the frontend.
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 go build -trimpath -buildvcs=false -ldflags='-s -w' \
-    -o /out/api ./cmd/api
+    -tags embedweb -o /out/api ./cmd/api
 
 # ------------------------------------------------------------
 # dev (live reload with air; source is bind-mounted at /app)

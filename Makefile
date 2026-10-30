@@ -102,6 +102,30 @@ docker/reset: confirm
 	@echo 'Database volume removed. Run make docker/up to start fresh.'
 
 # ============================================================
+# WEB APP (web/: Vue + Vite)
+# ============================================================
+
+## web/install: install the frontend's npm packages (run once, and after package.json changes)
+.PHONY: web/install
+web/install:
+	@npm --prefix web ci
+
+## web/dev: run the Vite dev server, proxying /v1 to the API on localhost:4000
+.PHONY: web/dev
+web/dev:
+	@npm --prefix web run dev
+
+## web/build: build the frontend into web/dist
+.PHONY: web/build
+web/build:
+	@npm --prefix web run build
+
+## web/api: build and run the API with the frontend embedded (serves the app at /)
+.PHONY: web/api
+web/api: web/build
+	@go run -tags embedweb ./cmd/api -db-dsn=${DB_DSN} $(FLAGS)
+
+# ============================================================
 # API DEVELOPMENT
 # ============================================================
 

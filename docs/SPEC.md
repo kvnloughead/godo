@@ -284,14 +284,15 @@ godo/
 │   │   └── syncsvc/          # server-side /sync transaction + seq helper
 │   ├── mailer/  logger/  validator/  vcs/  injector/   # existing
 │   └── assert/
-├── web/                      # one frontend for both the web app and the Wails desktop app
+├── web/                      # one frontend for both the web app and the Wails desktop app (Vue + Vite)
+│   ├── embed.go              # package web: embeds web/dist when built with -tags embedweb
 │   └── src/
-│       ├── backend/          # transport adapter: http.ts (web) | wails.ts (desktop bindings)
+│       ├── backend/          # Backend interface + adapters: http.ts (web) | wails.ts (desktop bindings)
 │       └── ...
 ├── db/migrations/
 ├── deploy/                   # production deployment config
 ├── docs/
-├── Dockerfile                # API image: build, dev (air), and runtime stages
+├── Dockerfile                # API image: web (frontend), build, dev (air), and runtime stages
 ├── compose.yaml              # local stack: Postgres, migrations, Mailpit, API
 ├── compose.dev.yaml          # override: run the API under air with the checkout mounted
 └── .env.example              # dev defaults for compose; copy to .env
@@ -302,7 +303,28 @@ godo/
 Notes:
 
 - `internal/todo`, `internal/syncproto`, and `internal/merge` do no I/O, so they can be tested with plain table tests. The server never imports `internal/sync`.
-- The web frontend is shared. On desktop, Wails exposes the Go `Store` as bindings, and the frontend calls them through `backend/wails.ts`. On the web, the same components call the HTTP API through `backend/http.ts`. The web app always runs in online mode.
+- The web frontend is shared. On desktop, Wails exposes the Go `Store` as bindings, and the frontend calls them through `backend/wails.ts`. On the web, the same components call the HTTP API through `backend/http.ts`. The web app always runs in online mode. See [Web app](#web-app).
+
+## Web app
+
+The frontend in `web/` is a Vue 3 + TypeScript app built with Vite. The same build runs in the browser and, later, inside the Wails desktop app.
+
+```
+web/src components ──► Backend (TS interface, mirrors store.Store)
+                          ├── http.ts  ──► /v1/todos            (web: always online mode)
+                          └── wails.ts ──► Go bindings ──► Store (desktop: local or online mode)
+```
+
+- **Components depend only on `Backend`.** `main.ts` provides one with `provide(backendKey, createBackend())`, and components get it with `inject(backendKey)`. `createBackend` picks the adapter. Errors map to `NotFoundError`, `ConflictError`, and `UnavailableError`, which mirror the `store` package's errors.
+- **Parsing stays in Go.** The frontend sends todo.txt text and displays the structured fields that the server or the bindings return. It never parses todo.txt itself. The TypeScript `Todo` type mirrors the JSON from `/v1/todos`. For the desktop adapter, `todo.Todo` needs JSON tags that produce the same shape.
+- **One origin.** In production, the API serves the built frontend: `web/dist` is embedded in the binary with `go:embed` when built with `-tags embedweb`, which the `Dockerfile` does. Requests that match no API route fall through to the frontend handler, which serves the file if it exists and `index.html` otherwise, so client-side routes work. `/v1/` and `/debug/` paths still get the JSON 404. In development, the Vite dev server proxies `/v1` to the API. Either way the browser makes no cross-origin requests, so CORS isn't involved.
+- **Builds without Node.** Without the `embedweb` tag, `web.Dist()` returns nil and the API serves no frontend, so `go build ./...` works on a checkout that has never run `npm`.
+- **Freshness and conflicts** follow [online mode](#online-mode-tradeoffs): refetch on window focus and periodically (SSE later), send `If-Match` on writes, and on `409` refetch and tell the user.
+
+Open decisions:
+
+- **Auth in the browser.** Keep the bearer token from `/v1/tokens/authentication` (simple, but readable by any XSS if stored in `localStorage`), or have the same endpoint also set an HttpOnly, `SameSite=Strict` session cookie for the web app.
+- **CORS** only matters if the frontend is ever served from a different origin. The current preflight response doesn't allow the `If-Match` header.
 
 ## Build order
 

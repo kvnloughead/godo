@@ -7,6 +7,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 	"github.com/kvnloughead/godo/internal/server/data"
+	"github.com/kvnloughead/godo/web"
 )
 
 // The routes function initializes and returns an http.Handler with all the
@@ -53,7 +54,9 @@ func (app *APIApplication) Routes() http.Handler {
 	router := httprouter.New()
 
 	// Set custom error handlers for 404 and 405 errors.
-	router.NotFound = http.HandlerFunc(app.notFoundResponse)
+	// Paths that match no route fall through to the web app, which sends API
+	// paths the usual JSON 404.
+	router.NotFound = app.frontendHandler(web.Dist())
 	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
 
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheck)

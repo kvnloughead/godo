@@ -11,6 +11,7 @@ There are two ways to run the API locally:
 
 - [Docker](https://docs.docker.com/get-docker/) with Compose v2 (`docker compose version` should work). Docker Desktop includes both.
 - Go, only if you want to run `make ci`, build the CLI, or run the API outside Docker.
+- Node.js 24 (see `web/.nvmrc`), only if you want to run `make ci` or work on the web app outside Docker.
 
 ### First run on a new device
 
@@ -29,6 +30,7 @@ When it's up:
 | What               | Where                                      |
 | ------------------ | ------------------------------------------ |
 | API                | http://localhost:4000/v1/healthcheck       |
+| Web app            | http://localhost:4000                      |
 | Mailpit (email UI) | http://localhost:8025                      |
 | Postgres           | `localhost:5433`, or just run `make docker/psql` |
 
@@ -41,7 +43,7 @@ All ports are bound to `127.0.0.1`, so nothing is reachable from the rest of you
 1. `db`: Postgres 16. Data lives in the `pgdata` named volume, so it survives restarts. The database and user from `.env` are created the first time the volume is empty.
 2. `migrate`: a one-shot [golang-migrate](https://github.com/golang-migrate/migrate) container that runs every up migration in `db/migrations` and exits. It waits for `db` to be healthy.
 3. `mailpit`: [Mailpit](https://mailpit.axllent.org/), an SMTP server that catches every email the API sends and shows it in a web UI. Registration and activation emails work offline, with no Mailtrap account.
-4. `api`: the API, built from the `Dockerfile`. It starts only after `migrate` finishes successfully.
+4. `api`: the API, built from the `Dockerfile`. It starts only after `migrate` finishes successfully. The image includes the web app, built in the `Dockerfile`'s `web` stage, and serves it at `/`. Under `make docker/dev`, the API serves no web app. Use `make web/dev` instead (see [Web app](#web-app)).
 
 ### Trying it out
 
@@ -79,15 +81,36 @@ Everything comes from `.env`, which Compose reads automatically. See `.env.examp
 
 Registration and activation emails go to Mailpit at http://localhost:8025. The sender address comes from `SMTP_SENDER` in `.env`. If it's unset outside production, the API derives a sender from the Go module path, or uses `GoDo <no-reply@godo.localhost>` when the Go toolchain isn't available.
 
+## Web app
+
+The frontend lives in `web/` (Vue + TypeScript + Vite). For live reload while working on it:
+
+```bash
+make web/install     # once, and again after package.json changes
+make docker/up       # or docker/dev: the API on localhost:4000
+make web/dev         # Vite dev server on http://localhost:5173
+```
+
+The dev server proxies `/v1` to the API, so the app and the API share an origin and no CORS setup is needed. To proxy to an API somewhere else, set `GODO_API_URL`, for example `GODO_API_URL=http://localhost:4001 make web/dev`.
+
+`make web/build` writes the production build to `web/dist`. See [web/README.md](../../web/README.md) for the npm scripts and how the API serves the build.
+
 ## Pre-commit Hook
 
 Run this once after cloning:
 
 ```bash
 make setup
+make web/install
 ```
 
-This points git at the hooks in `.githooks/`. The pre-commit hook runs `scripts/ci.sh`, which is the same set of checks CI runs: `gofmt`, `go vet`, `go build`, and `go test -race`. If a check fails, the commit is aborted. To skip the hook for a single commit, use `git commit --no-verify`.
+This points git at the hooks in `.githooks/`. The pre-commit hook runs `scripts/ci.sh`, which is the same set of checks CI runs:
+
+- Go: `gofmt`, `go vet`, `go build`, and `go test -race`
+- Web: Prettier, type checking and a production build, and Vitest
+- Go again, with the built frontend embedded (`-tags embedweb`)
+
+The web checks need `web/node_modules`, so run `make web/install` first. If a check fails, the commit is aborted. To skip the hook for a single commit, use `git commit --no-verify`.
 
 You can run the checks yourself at any time with `make ci`.
 
