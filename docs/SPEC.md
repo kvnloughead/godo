@@ -328,7 +328,7 @@ Open decisions:
 
 ## Build order
 
-Each step leaves a working app.
+Each step leaves a working app. Progress on these steps is tracked in [TODO.md](TODO.md).
 
 1. **`internal/todo`**: todo.txt parser and formatter, with round-trip tests.
 2. **`Store` interface + `apistore`**: refactor the CLI onto it. Online mode now works through the new structure.
