@@ -30,7 +30,14 @@ fi
 echo '==> web: prettier'
 npm --prefix web run --silent format:check
 
-echo '==> web: typecheck and build'
+echo '==> web: typecheck'
+npm --prefix web run --silent typecheck
+
+echo '==> web: eslint'
+npm --prefix web run --silent lint
+
+# build also type checks, but vue-tsc -b is incremental, so it's fast here.
+echo '==> web: build'
 npm --prefix web run --silent build
 
 echo '==> web: test'

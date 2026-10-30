@@ -29,9 +29,18 @@ Run these from `web/`, or use the `make web/*` targets from the repo root.
 | `npm run dev`          | Dev server on :5173, proxying `/v1` to :4000       |
 | `npm run build`        | Type check with `vue-tsc`, then build into `dist/` |
 | `npm run typecheck`    | Type check only                                    |
+| `npm run lint`         | ESLint, failing on any warning (run by CI)         |
+| `npm run lint:fix`     | ESLint with autofixes                              |
 | `npm test`             | Run Vitest once                                    |
 | `npm run format`       | Format with Prettier                               |
 | `npm run format:check` | Check formatting (run by CI)                       |
+
+## Type checking and linting
+
+Both are as strict as the tools allow:
+
+- **TypeScript.** [tsconfig.strict.json](tsconfig.strict.json) turns on `strict` plus every stricter compiler check, and both `tsconfig.app.json` and `tsconfig.node.json` extend it. In `tsconfig.app.json`, `strictTemplates` type-checks Vue templates as strictly as script code.
+- **ESLint.** [eslint.config.ts](eslint.config.ts) uses typescript-eslint's `strictTypeChecked` and `stylisticTypeChecked` presets and eslint-plugin-vue's `flat/recommended` set. The type-checked rules catch things `tsc` doesn't, such as floating promises and unsafe `any`. Prettier handles formatting, so ESLint's formatting rules are off. Prefix a name with `_` to mark it as intentionally unused, which matches `tsc`'s `noUnusedParameters`.
 
 ## How the API serves it
 

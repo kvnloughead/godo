@@ -107,7 +107,7 @@ make web/install
 This points git at the hooks in `.githooks/`. The pre-commit hook runs `scripts/ci.sh`, which is the same set of checks CI runs:
 
 - Go: `gofmt`, `go vet`, `go build`, and `go test -race`
-- Web: Prettier, type checking and a production build, and Vitest
+- Web: Prettier, type checking (`vue-tsc`), ESLint, a production build, and Vitest
 - Go again, with the built frontend embedded (`-tags embedweb`)
 
 The web checks need `web/node_modules`, so run `make web/install` first. If a check fails, the commit is aborted. To skip the hook for a single commit, use `git commit --no-verify`.
